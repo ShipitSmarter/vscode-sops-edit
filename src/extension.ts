@@ -30,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 						let contents = e.getText().trim();
 						if (contents !== original) {
 							copyEncrypt(path, file, tempfile);
-							vscode.window.showInformationMessage(`saved to encrypted file ${fdetails.fileName}`);
+							vscode.window.showInformationMessage(`saved to encrypted file ${file}`);
 						}
 					}
 				});
@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 					let fdetails = f.dissectPath(e.fileName.replace(/\.git$/,''));
 					if (fdetails.fileName === tempfile) {
 						fs.unlinkSync(fdetails.filePath);
-						vscode.window.showInformationMessage(`closed and deleted file ${fdetails.fileName}`);
+						vscode.window.showInformationMessage(`closed and deleted file ${tempfile}`);
 					}
 					
 				});
