@@ -2,24 +2,6 @@ import * as path from "path";
 import * as fs from "fs";
 import * as vscode from "vscode";
 
-export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
-  return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
-}
-
-export async function getWorkspaceFile(matchString: string | vscode.RelativePattern, showErrorMode:string = 'verbose'): Promise<string> {
-	// get path to file in workspace
-	// suppress ui user error output by setting showErrorMode = 'silent'
-	let outPath = '';
-	let functionsFiles = await vscode.workspace.findFiles(matchString);
-	if (functionsFiles.length > 0) {
-		outPath = cleanPath(functionsFiles[0].fsPath);
-	} else if (showErrorMode !== 'silent') {
-		vscode.window.showErrorMessage('Could not locate file ' + matchString);
-	}
-
-	return outPath;
-}
-
 export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
 	// get path to file in workspace
 	let functionsFiles = await vscode.workspace.findFiles(matchString);
@@ -37,9 +19,7 @@ export function getExtensionFile(context: vscode.ExtensionContext, folder: strin
 	);
 
 	let filePathEscaped : string = fileRawPath.toString();
-
 	let filePath = vscode.Uri.parse(filePathEscaped).fsPath;
-
 	return filePath;
 }
 
@@ -49,63 +29,6 @@ export function cleanPath (path: string) : string {
 
 export function parentPath (path: string) : string {
 	return path.replace(/\/[^\/]+$/,'');
-}
-
-export function nameFromPath (path: string) : string {
-	return path.replace(/^[\s\S]*[\/\\]/g,'');
-}
-
-export function isEmpty(string: string) : boolean {
-	return (string === undefined || string === null || string === '');
-}
-
-export async function getFileContentFromGlob(glob:string|vscode.RelativePattern) : Promise<string> {
-	let content: string = '';
-	let path = await getWorkspaceFile(glob);
-	if (!isEmpty(path)) {
-		content = fs.readFileSync(path, 'utf8');
-	}
-	return content;
-}
-
-export function getDateTimeStamp() : string {
-	// create datetimestamp in format YYYYMMDD_hhmmss
-	return (new Date()).toISOString().substring(0,19).replace(/[\-:]/g,'').replace(/T/g,'_');
-}
-
-export function isFile(path:string) : boolean {
-	let isF:boolean = true;
-	try {
-		fs.lstatSync(path).isFile();
-	} catch (err) {
-		isF = false;
-	}
-
-	return isF;
-}
-
-export function isDirectory(path:string) : boolean {
-	let isDir:boolean = true;
-	try {
-		let check:boolean = fs.lstatSync(path).isDirectory();
-		isDir = check;
-	} catch (err) {
-		isDir = false;
-	}
-
-	return isDir;
-}
-
-export function forceWriteFileSync(filePath:string, fileContent:string, options:any) {
-	const parentDir = parentPath(cleanPath(filePath));
-	
-	// make parent directory if not exists
-	if(!fs.existsSync(parentDir)) {
-		fs.mkdirSync(parentDir, { recursive: true });
-	}
-	
-	// write file
-	fs.writeFileSync(filePath,fileContent,options);
 }
 
 export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
@@ -124,12 +47,6 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 	return terminal;
 }
 
-export function infoMessage(informationMessage: string = '') {
-	if (!isEmpty(informationMessage)) {
-		vscode.window.showInformationMessage(informationMessage);
-	}
-}
-
 export function dissectPath(files:any[] | string) : {filePath:string, fileName:string, parentPath:string, filePureName:string, extension:string} {
 	// interpret arguments
 	let fspath: string = '';
@@ -139,7 +56,7 @@ export function dissectPath(files:any[] | string) : {filePath:string, fileName:s
 		fspath=  files;
 	}
 
-	let fp = fspath.replace(/\\/g, '/');
+	let fp = cleanPath(fspath);
 	let fn = fp.split('/').pop() ?? '';
 	let fpn = fn.replace(/\.[^\.]*$/,'');
 	let ext = fn.split('.').pop() ?? '';
@@ -151,4 +68,34 @@ export function dissectPath(files:any[] | string) : {filePath:string, fileName:s
 		filePureName: fpn,
 		extension: ext
 	};
+}
+
+export function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
+	// save to original file and encrypt
+	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
+	encrypt(path, file, terminal);
+}
+
+export function encrypt(path:string, file:string, terminal:vscode.Terminal): vscode.Terminal {
+	executeInTerminal([`sops -i -e ${file}`], terminal);
+	return terminal;
+}
+
+export function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
+	let terminal: vscode.Terminal = cdToLocation(path, vscode.window.createTerminal('sops (decrypt)'));
+	executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
+	return terminal;
+}
+
+export function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]][]) : boolean {
+	// go through all regexes in all .sops.yaml files, combine them with 
+	// the .sops.yaml file location, and return if given file path matches any
+	for (const pr of pathsRegexes) {
+		for (const re of pr[1]) {
+			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
+				return true;
+			}
+		}
+	}
+	return false;
 }

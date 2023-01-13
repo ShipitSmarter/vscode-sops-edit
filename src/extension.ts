@@ -15,11 +15,10 @@ export async function activate(context: vscode.ExtensionContext) {
 		return [fdetails.parentPath, fileRegexes];
 	});
 
-	// let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
 	vscode.workspace.onDidOpenTextDocument((openDocument:vscode.TextDocument) => {
 		// only apply if this is a sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
-		if (!fileIsSopsEncrypted(filePath,pathsRegexes) ) {
+		if (!f.fileIsSopsEncrypted(filePath,pathsRegexes) ) {
 			return;
 		}
 
@@ -33,8 +32,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		var tempfilepath = `${path}/${tempfile}`;
 
 		// decrypt
-		let decryptTerminal: vscode.Terminal = decrypt(path,file, tempfile);
-		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal('sops'));
+		let decryptTerminal: vscode.Terminal = f.decrypt(path,file, tempfile);
+		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal('sops (encrypt)'));
 		var original:string = '';
 
 		// save and encrypt when tmp file is updated
@@ -44,7 +43,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				let contents = e.getText().trim();
 				if (contents !== original) {
 					original = contents;
-					copyEncrypt(path, file, tempfile, encryptTerminal);
+					f.copyEncrypt(path, file, tempfile, encryptTerminal);
 				}
 			}
 		});
@@ -73,37 +72,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		}); 
 	});
 
+	// let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {}
 	// context.subscriptions.push(disposable);
-}
-
-function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
-	// save to original file and encrypt
-	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
-	encrypt(path, file, terminal);
-}
-
-function encrypt(path:string, file:string, terminal:vscode.Terminal): vscode.Terminal {
-	f.executeInTerminal([`sops -i -e ${file}`], terminal);
-	return terminal;
-}
-
-function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
-	let terminal: vscode.Terminal = f.cdToLocation(path, vscode.window.createTerminal('sops (decrypt)'));
-	f.executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
-	return terminal;
-}
-
-function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]][]) : boolean {
-	// go through all regexes in all .sops.yaml files, combine them with 
-	// the .sops.yaml file location, and return if given file path matches any
-	for (const pr of pathsRegexes) {
-		for (const re of pr[1]) {
-			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 // this method is called when your extension is deactivated
