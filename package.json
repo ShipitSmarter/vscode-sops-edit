@@ -14,21 +14,6 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "vscode-sops-edit.decrypt",
-        "title": "decrypt and open"
-      }
-    ],
-    "menus": {
-      "explorer/context": [
-        {
-          "command": "vscode-sops-edit.decrypt",
-          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|jsonc)$/",
-          "group": "sops-edit"
-        }
-      ]
-    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

@@ -34,8 +34,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	let henk = 'henk';
 
-	let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
-		var fpn = f.dissectPath(files);
+	// let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
+	vscode.workspace.onDidOpenTextDocument((openDocument:vscode.TextDocument) => {
+		// only apply if this is a sops encrypted file
+		let filePath = f.cleanPath(openDocument.fileName);
+		if (!sopsEncryptedFiles.includes(filePath)) {
+			return;
+		}
+
+		// close the just-opened original document
+		vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+
+		// prep
+		var fpn = f.dissectPath(openDocument.fileName);
 		var [path, filepath, file, purename, ext] = [fpn.parentPath, fpn.filePath, fpn.fileName, fpn.filePureName, fpn.extension ];
 		var tempfile = `${purename}.tmp.${ext}`;
 		var tempfilepath = `${path}/${tempfile}`;
@@ -81,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}); 
 	});
 
-	context.subscriptions.push(disposable);
+	// context.subscriptions.push(disposable);
 }
 
 function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
