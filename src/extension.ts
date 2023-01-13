@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
+import * as f from './utilities/functions';
 
 export function activate(context: vscode.ExtensionContext) {
 	
-	let disposable = vscode.commands.registerCommand('vscode-sops-edit.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from SOPS edit!');
+	let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
+		let filePathName = f.getCleanFilePathAndName(files);
+		vscode.window.showInformationMessage('Your decryption code here');
 	});
 	context.subscriptions.push(disposable);
 }

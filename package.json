@@ -10,16 +10,25 @@
 		"Other"
 	],
 	"activationEvents": [
-        "onCommand:vscode-sops-edit.helloWorld"
+        "onCommand:vscode-sops-edit.decrypt"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-sops-edit.helloWorld",
-				"title": "Hello World"
+				"command": "vscode-sops-edit.decrypt",
+				"title": "decrypt with SOPS"
 			}
-		]
+		],
+		"menus": {
+			"explorer/context": [
+			  {
+				"command": "vscode-sops-edit.decrypt",
+				"when": "resourceFilename =~ /^[\\s\\S]*\\.enc.yaml$/",
+				"group": "sops-edit"
+			  }
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
