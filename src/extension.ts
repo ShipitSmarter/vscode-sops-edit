@@ -1,9 +1,39 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as yaml from 'yaml';
 import * as f from './utilities/functions';
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	
+	// find all .sops.yaml files
+	var sopsFiles =  (await f.getWorkspaceFiles('**/*.sops.yaml')).filter(f => !f.includes('/bin/'));
+	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
+		let fdetails = f.dissectPath(sfile);
+		let contentString: string = fs.readFileSync(sfile,'utf-8');
+		let content = yaml.parse(contentString);
+		let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
+		return [fdetails.parentPath, fileRegexes];
+	});
+
+	let allFiles = await f.getWorkspaceFiles('**/*.{yaml,json,jsonc}');
+	var sopsEncryptedFiles: string[] = [];
+	for (const pr of pathsRegexes) {
+		
+		for (const fi of allFiles) {
+			if (sopsEncryptedFiles.includes(fi)) {
+				continue;
+			}
+			for (const re of pr[1]) {
+				if (new RegExp(`${pr[0]}/.*${re}`).test(fi)) {
+					sopsEncryptedFiles.push(fi);
+					break;
+				}
+			}
+		}
+	}
+
+	let henk = 'henk';
+
 	let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
 		var fpn = f.dissectPath(files);
 		var [path, filepath, file, purename, ext] = [fpn.parentPath, fpn.filePath, fpn.fileName, fpn.filePureName, fpn.extension ];
