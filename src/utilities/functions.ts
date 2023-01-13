@@ -182,10 +182,16 @@ export function infoMessage(informationMessage: string = '') {
 	}
 }
 
-export function dissectPath(files:any[]) : {filePath:string, fileName:string, parentPath:string, filePureName:string, extension:string} {
-	// get file name and path
-	let filesValid = (typeof files !== 'undefined') && (files.length > 0);
-	let fp = filesValid ? files[0].fsPath.replace(/\\/g, '/') : '';
+export function dissectPath(files:any[] | string) : {filePath:string, fileName:string, parentPath:string, filePureName:string, extension:string} {
+	// interpret arguments
+	let fspath: string = '';
+	if(Array.isArray(files) && files.length >0) {
+		fspath = files[0].fsPath;
+	} else if (typeof files === 'string') {
+		fspath=  files;
+	}
+
+	let fp = fspath.replace(/\\/g, '/');
 	let fn = fp.split('/').pop() ?? '';
 	let fpn = fn.replace(/\.[^\.]*$/,'');
 	let ext = fn.split('.').pop() ?? '';
