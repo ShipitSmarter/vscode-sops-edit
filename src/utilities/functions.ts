@@ -89,25 +89,6 @@ export function nameFromPath (path: string) : string {
 	return path.replace(/^[\s\S]*[\/\\]/g,'');
 }
 
-export function nth(num:number): string {
-	let after:string = '';
-	switch (num) {
-		case 1 :
-		after = 'st';
-		break;
-		case 2 :
-		after = 'nd';
-		break;
-		case 3 :
-		after = 'rd';
-		break;
-		default:
-		after = 'th';
-		break;
-	}
-	return after;
-}
-
 export function arrayFrom0(max:number) : number[] {
 	// from https://stackoverflow.com/a/33352604/1716283
 	return [...Array(max).keys()];
@@ -167,18 +148,6 @@ export function isDirectory(path:string) : boolean {
 	return isDir;
 }
 
-export function getButton(id:string, title:string, codicon:string = '',appearance:string = 'primary',hidden:string = '',clas:string = ''): string {
-	let codiconString: string = isEmpty(codicon) ? '' : `<span slot="start" class="codicon ${codicon}"></span>`;
-	let classString:string = isEmpty(clas) ? '' : `class="${clas}"`;
-	let button: string = /*html*/ `
-		<vscode-button id="${id}" ${classString} appearance="${appearance}" ${hidden}>
-		${title}
-		${codiconString}
-		</vscode-button>
-		`;
-	return button;
-}
-
 export function forceWriteFileSync(filePath:string, fileContent:string, options:any) {
 	const parentDir = parentPath(cleanPath(filePath));
 	
@@ -213,14 +182,19 @@ export function infoMessage(informationMessage: string = '') {
 	}
 }
 
-export function getCleanFilePathAndName(files:any[]) : {filePath:string, fileName:string, parentPath:string} {
+export function dissectPath(files:any[]) : {filePath:string, fileName:string, parentPath:string, filePureName:string, extension:string} {
 	// get file name and path
 	let filesValid = (typeof files !== 'undefined') && (files.length > 0);
 	let fp = filesValid ? files[0].fsPath.replace(/\\/g, '/') : '';
+	let fn = fp.split('/').pop() ?? '';
+	let fpn = fn.replace(/\.[^\.]*$/,'');
+	let ext = fn.split('.').pop() ?? '';
 
 	return {
 		filePath: fp,
-		fileName: fp.split('/').pop() ?? '',
-		parentPath: parentPath(fp)
+		fileName: fn,
+		parentPath: parentPath(fp),
+		filePureName: fpn,
+		extension: ext
 	};
 }
