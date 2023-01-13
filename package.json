@@ -24,7 +24,7 @@
       "explorer/context": [
         {
           "command": "vscode-sops-edit.decrypt",
-          "when": "resourceFilename =~ /^[\\s\\S]*\\.enc.yaml$/",
+          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|jsonc)$/",
           "group": "sops-edit"
         }
       ]
