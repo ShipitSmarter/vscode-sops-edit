@@ -2,21 +2,6 @@ import * as path from "path";
 import * as fs from "fs";
 import * as vscode from "vscode";
 
-export function escapeHtml(unsafe:string): string {
-	// from https://stackoverflow.com/a/6234804/1716283
-	return unsafe
-		 .replace(/&/g, "&amp;")
-		 .replace(/</g, "&lt;")
-		 .replace(/>/g, "&gt;")
-		 .replace(/"/g, "&quot;")
-		 .replace(/'/g, "&#039;");
-}
-
-export function removeQuotes(input:string): string {
-	let output = input.replace(/^["']/,'').replace(/["']$/,'');
-	return output;
-}
-
 export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
   return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
 }
@@ -58,25 +43,6 @@ export function getExtensionFile(context: vscode.ExtensionContext, folder: strin
 	return filePath;
 }
 
-export function startScript (fileName ?: string , filePath ?: string , command ?: string) : vscode.Terminal {
-	let terminal = vscode.window.createTerminal();
-	terminal.show();
-	//terminal.sendText('Get-Location');
-	if (filePath && filePath !== '') {
-		terminal.sendText(`cd ${filePath}`);
-	};
-	
-	if (fileName && fileName !== '') {
-		terminal.sendText(`./${fileName}`);
-	};
-
-	if (command && command !== '') {
-		terminal.sendText(command);
-	};
-	
-	return terminal;
-}
-
 export function cleanPath (path: string) : string {
 	return path.replace(/\\/g, '/');
 }
@@ -87,24 +53,6 @@ export function parentPath (path: string) : string {
 
 export function nameFromPath (path: string) : string {
 	return path.replace(/^[\s\S]*[\/\\]/g,'');
-}
-
-export function arrayFrom0(max:number) : number[] {
-	// from https://stackoverflow.com/a/33352604/1716283
-	return [...Array(max).keys()];
-}
-
-export function arrayFrom1(max:number) : number[] {
-	return arrayFrom0(max).map(x => ++x);
-}
-
-export function toBoolean(string:string) : boolean {
-	let outString : boolean = false;
-	if (string.toLowerCase() === 'true') {
-		outString = true;
-	}
-
-	return outString;
 }
 
 export function isEmpty(string: string) : boolean {

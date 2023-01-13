@@ -11,62 +11,64 @@ export function activate(context: vscode.ExtensionContext) {
 		var tempfilepath = `${path}/${tempfile}`;
 
 		// decrypt
-		let terminal: vscode.Terminal = decrypt(path,file, tempfile);
+		let decryptTerminal: vscode.Terminal = decrypt(path,file, tempfile);
+		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal('sops'));
+		var original:string = '';
+
+		// save and encrypt when tmp file is updated
+		vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
+			let fdetails = f.dissectPath(e.fileName);
+			if (fdetails.fileName === tempfile) {
+				let contents = e.getText().trim();
+				if (contents !== original) {
+					original = contents;
+					copyEncrypt(path, file, tempfile, encryptTerminal);
+				}
+			}
+		});
+
+		// delete tmp file when closed
+		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
+			let fdetails = f.dissectPath(e.fileName.replace(/\.git$/,''));
+			if (fdetails.fileName === tempfile) {
+				f.executeInTerminal(['exit'],encryptTerminal);
+				fs.unlinkSync(fdetails.filePath);
+			}
+		});
 
 		// open tmp file when terminal exits
 		vscode.window.onDidCloseTerminal(t => { 
-			if (t === terminal && t.exitStatus) { 
-				vscode.window.showInformationMessage(`Decrypted file ${file} to ${tempfile}`);
+			if (t === decryptTerminal && t.exitStatus) {
 				// open
 				let openPath = vscode.Uri.file(filepath.replace(file, tempfile));
-				vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
-
 				// keep original decrypted string for comparison
-				var original = fs.readFileSync(tempfilepath, 'utf-8').trim();
+				original = fs.readFileSync(tempfilepath, 'utf-8').trim();
 
-				vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
-					let fdetails = f.dissectPath(e.fileName);
-					if (fdetails.fileName === tempfile) {
-						let contents = e.getText().trim();
-						if (contents !== original) {
-							original = contents;
-							copyEncrypt(path, file, tempfile);
-							vscode.window.showInformationMessage(`saved to encrypted file ${file}`);
-						}
-					}
-				});
-		
-				vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-					let fdetails = f.dissectPath(e.fileName.replace(/\.git$/,''));
-					if (fdetails.fileName === tempfile) {
-						fs.unlinkSync(fdetails.filePath);
-						vscode.window.showInformationMessage(`closed and deleted file ${tempfile}`);
-					}
-					
-				});
+				// last because asynchronous
+				//vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
+				vscode.commands.executeCommand('vscode.open',openPath);
 			}
 		}); 
-	
-		function copyEncrypt(path:string, file:string, tempfile:string) : void {
-			// save to original file
-			fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
-			encrypt(path, file);
-		}
-
-		function encrypt(path:string, file:string): vscode.Terminal {
-			let terminal: vscode.Terminal = f.cdToLocation(path);
-			f.executeInTerminal([`sops -i -e ${file}`], terminal);
-			return terminal;
-		}
-
-		function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
-			let terminal: vscode.Terminal = f.cdToLocation(path);
-			f.executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
-			return terminal;
-		}
 	});
 
 	context.subscriptions.push(disposable);
+}
+
+function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
+	// save to original file and encrypt
+	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
+	encrypt(path, file, terminal);
+}
+
+function encrypt(path:string, file:string, terminal:vscode.Terminal): vscode.Terminal {
+	f.executeInTerminal([`sops -i -e ${file}`], terminal);
+	return terminal;
+}
+
+function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
+	let terminal: vscode.Terminal = f.cdToLocation(path, vscode.window.createTerminal('sops (decrypt)'));
+	f.executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
+	return terminal;
 }
 
 // this method is called when your extension is deactivated
