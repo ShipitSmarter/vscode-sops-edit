@@ -192,14 +192,14 @@ export function forceWriteFileSync(filePath:string, fileContent:string, options:
 }
 
 export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
-	terminal.show();
+	//terminal.show();
 	terminal.sendText(`cd ${location}`);
 	return terminal;
 }
 
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
 	// execute commands in terminal
-	terminal.show();
+	//terminal.show();
 
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);

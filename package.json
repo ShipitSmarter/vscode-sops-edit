@@ -17,7 +17,7 @@
 		"commands": [
 			{
 				"command": "vscode-sops-edit.decrypt",
-				"title": "decrypt with SOPS"
+				"title": "decrypt and open"
 			}
 		],
 		"menus": {
