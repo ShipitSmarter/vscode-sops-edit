@@ -5,7 +5,7 @@ import * as f from './utilities/functions';
 
 export async function activate(context: vscode.ExtensionContext) {
 	
-	// find all .sops.yaml files
+	// find all filepath/regex combinations in all .sops.yaml files
 	var sopsFiles =  (await f.getWorkspaceFiles('**/*.sops.yaml')).filter(f => !f.includes('/bin/'));
 	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
 		let fdetails = f.dissectPath(sfile);
@@ -15,30 +15,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		return [fdetails.parentPath, fileRegexes];
 	});
 
-	let allFiles = await f.getWorkspaceFiles('**/*.{yaml,json,jsonc}');
-	var sopsEncryptedFiles: string[] = [];
-	for (const pr of pathsRegexes) {
-		
-		for (const fi of allFiles) {
-			if (sopsEncryptedFiles.includes(fi)) {
-				continue;
-			}
-			for (const re of pr[1]) {
-				if (new RegExp(`${pr[0]}/.*${re}`).test(fi)) {
-					sopsEncryptedFiles.push(fi);
-					break;
-				}
-			}
-		}
-	}
-
-	let henk = 'henk';
-
 	// let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {
 	vscode.workspace.onDidOpenTextDocument((openDocument:vscode.TextDocument) => {
 		// only apply if this is a sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
-		if (!sopsEncryptedFiles.includes(filePath)) {
+		if (!fileIsSopsEncrypted(filePath,pathsRegexes) ) {
 			return;
 		}
 
@@ -110,6 +91,19 @@ function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
 	let terminal: vscode.Terminal = f.cdToLocation(path, vscode.window.createTerminal('sops (decrypt)'));
 	f.executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
 	return terminal;
+}
+
+function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]][]) : boolean {
+	// go through all regexes in all .sops.yaml files, combine them with 
+	// the .sops.yaml file location, and return if given file path matches any
+	for (const pr of pathsRegexes) {
+		for (const re of pr[1]) {
+			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 // this method is called when your extension is deactivated
