@@ -22,13 +22,14 @@ export function activate(context: vscode.ExtensionContext) {
 				vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
 
 				// keep original decrypted string for comparison
-				let original = fs.readFileSync(tempfilepath, 'utf-8').trim();
+				var original = fs.readFileSync(tempfilepath, 'utf-8').trim();
 
 				vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
 					let fdetails = f.dissectPath(e.fileName);
 					if (fdetails.fileName === tempfile) {
 						let contents = e.getText().trim();
 						if (contents !== original) {
+							original = contents;
 							copyEncrypt(path, file, tempfile);
 							vscode.window.showInformationMessage(`saved to encrypted file ${file}`);
 						}
@@ -36,7 +37,6 @@ export function activate(context: vscode.ExtensionContext) {
 				});
 		
 				vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-
 					let fdetails = f.dissectPath(e.fileName.replace(/\.git$/,''));
 					if (fdetails.fileName === tempfile) {
 						fs.unlinkSync(fdetails.filePath);
