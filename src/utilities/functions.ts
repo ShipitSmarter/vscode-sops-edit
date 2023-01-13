@@ -1,4 +1,3 @@
-import { Uri, Webview, workspace , ExtensionContext, window, Terminal} from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import * as vscode from "vscode";
@@ -18,15 +17,15 @@ export function removeQuotes(input:string): string {
 	return output;
 }
 
-export function getUri(webview: Webview, extensionUri: Uri, pathList: string[]) {
-  return webview.asWebviewUri(Uri.joinPath(extensionUri, ...pathList));
+export function getUri(webview: vscode.Webview, extensionUri: vscode.Uri, pathList: string[]) {
+  return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...pathList));
 }
 
 export async function getWorkspaceFile(matchString: string | vscode.RelativePattern, showErrorMode:string = 'verbose'): Promise<string> {
 	// get path to file in workspace
 	// suppress ui user error output by setting showErrorMode = 'silent'
 	let outPath = '';
-	let functionsFiles = await workspace.findFiles(matchString);
+	let functionsFiles = await vscode.workspace.findFiles(matchString);
 	if (functionsFiles.length > 0) {
 		outPath = cleanPath(functionsFiles[0].fsPath);
 	} else if (showErrorMode !== 'silent') {
@@ -38,7 +37,7 @@ export async function getWorkspaceFile(matchString: string | vscode.RelativePatt
 
 export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
 	// get path to file in workspace
-	let functionsFiles = await workspace.findFiles(matchString);
+	let functionsFiles = await vscode.workspace.findFiles(matchString);
 	let outFiles: string[] = [];
 	for (let index = 0; index < functionsFiles.length; index++) {
 		outFiles[index] = cleanPath(functionsFiles[index].fsPath);
@@ -46,21 +45,21 @@ export async function getWorkspaceFiles(matchString: string): Promise<string[]> 
 	return outFiles;
 }
 
-export function getExtensionFile(context: ExtensionContext, folder: string, file: string): string {
+export function getExtensionFile(context: vscode.ExtensionContext, folder: string, file: string): string {
 	// get path to file in extension folder
-	let fileRawPath = Uri.file(
+	let fileRawPath = vscode.Uri.file(
 		path.join(context.extensionPath, folder, file)
 	);
 
 	let filePathEscaped : string = fileRawPath.toString();
 
-	let filePath = Uri.parse(filePathEscaped).fsPath;
+	let filePath = vscode.Uri.parse(filePathEscaped).fsPath;
 
 	return filePath;
 }
 
-export function startScript (fileName ?: string , filePath ?: string , command ?: string) : Terminal {
-	let terminal = window.createTerminal();
+export function startScript (fileName ?: string , filePath ?: string , command ?: string) : vscode.Terminal {
+	let terminal = vscode.window.createTerminal();
 	terminal.show();
 	//terminal.sendText('Get-Location');
 	if (filePath && filePath !== '') {
@@ -192,36 +191,36 @@ export function forceWriteFileSync(filePath:string, fileContent:string, options:
 	fs.writeFileSync(filePath,fileContent,options);
 }
 
-export function executePowershellFunction(psCommandArray:string[],informationMessage:string = '') {
-	// get functions.ps1 name and path
-	let functionsFileName = 'functions.ps1';
-	getWorkspaceFile('**/scripts/' + functionsFileName).then( functionsPath => {
-		let functionsDirectory = functionsPath.replace(/\\/g, '/').replace(/\/[^\/]+$/,'');
-
-		// execute commands in new terminal window
-		let terminal = vscode.window.createTerminal();
-		terminal.show();
-
-		terminal.sendText(`cd ${functionsDirectory}`);
-		terminal.sendText(`. ./${functionsFileName}`);
-
-		for (const psCommand of psCommandArray) {
-			terminal.sendText(psCommand);
-		}
-
-		// let user know the commands have been executed
-		if (!isEmpty(informationMessage)) {
-			vscode.window.showInformationMessage(informationMessage);
-		}
-	});
+export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
+	terminal.show();
+	terminal.sendText(`cd ${location}`);
+	return terminal;
 }
 
-export function getCleanFilePathAndName(files:any[]) : {filePath:string, fileName:string} {
+export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
+	// execute commands in terminal
+	terminal.show();
+
+	for (const psCommand of commandArray) {
+		terminal.sendText(psCommand);
+	}
+	return terminal;
+}
+
+export function infoMessage(informationMessage: string = '') {
+	if (!isEmpty(informationMessage)) {
+		vscode.window.showInformationMessage(informationMessage);
+	}
+}
+
+export function getCleanFilePathAndName(files:any[]) : {filePath:string, fileName:string, parentPath:string} {
 	// get file name and path
 	let filesValid = (typeof files !== 'undefined') && (files.length > 0);
+	let fp = filesValid ? files[0].fsPath.replace(/\\/g, '/') : '';
 
 	return {
-		filePath: filesValid ? files[0].fsPath.replace(/\\/g, '/') : '',
-		fileName: filesValid ? (files[0].fsPath.replace(/\\/g, '/').split('/').pop() ?? '') : ''
+		filePath: fp,
+		fileName: fp.split('/').pop() ?? '',
+		parentPath: parentPath(fp)
 	};
 }
