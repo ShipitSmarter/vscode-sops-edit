@@ -82,18 +82,22 @@ export function dissectPath(files:any[] | string) : PathDetails {
 export function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
 	// save to original file and encrypt
 	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
-	encrypt(path, file, terminal);
+	encrypt(path, file, tempfile, terminal);
 }
 
-export function encrypt(path:string, file:string, terminal:vscode.Terminal): vscode.Terminal {
-	executeInTerminal([`sops -i -e ${file}`], terminal);
+export function encrypt(path:string, file:string, tempfile:string, terminal:vscode.Terminal): vscode.Terminal {
+	executeInTerminal([replaceInCommand(c.encryptionCommand,file,tempfile)], terminal);
 	return terminal;
 }
 
 export function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
 	let terminal: vscode.Terminal = cdToLocation(path, vscode.window.createTerminal(c.terminalDecryptName));
-	executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
+	executeInTerminal([replaceInCommand(c.decryptionCommand,file,tempfile),'exit'], terminal);
 	return terminal;
+}
+
+export function replaceInCommand(command:string, file:string, tempfile:string) : string {
+	return command.replace(c.fileString,file).replace(c.tempFileString,tempfile);
 }
 
 export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
