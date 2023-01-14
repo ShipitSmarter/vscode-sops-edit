@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import * as yaml from 'yaml';
 import * as f from './utilities/functions';
 import * as c from './utilities/constants';
 

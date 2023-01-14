@@ -69,15 +69,13 @@ export function dissectPath(files:any[] | string) : PathDetails {
 
 	let fp = cleanPath(fspath);
 	let fn = fp.split('/').pop() ?? '';
-	let fpn = fn.replace(/\.[^\.]*$/,'');
-	let ext = fn.split('.').pop() ?? '';
 
 	return {
 		filePath: fp,
 		fileName: fn,
 		parentPath: parentPath(fp),
-		filePureName: fpn,
-		extension: ext
+		filePureName: fn.replace(/\.[^\.]*$/,''),
+		extension: fn.split('.').pop() ?? ''
 	};
 }
 
@@ -114,6 +112,8 @@ export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 }
 
 export function getSopsPatternsFromFile(file:string) : PatternSet {
+	// open .sops.yaml file, extract path_regex patterns, combine with
+	// file location to return a PatternSet
 	let fdetails: PathDetails = dissectPath(file);
 	let contentString: string = fs.readFileSync(file,'utf-8');
 	let content = yaml.parse(contentString);
