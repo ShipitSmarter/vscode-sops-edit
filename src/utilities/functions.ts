@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import * as yaml from "yaml";
 import * as vscode from "vscode";
 import * as c from "./constants";
 
@@ -99,4 +100,18 @@ export function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]
 		}
 	}
 	return false;
+}
+
+export async function getSopsPatterns() : Promise<[string, string[]][]> {
+	// find all filepath/regex combinations in all .sops.yaml files
+	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
+	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
+		let fdetails = dissectPath(sfile);
+		let contentString: string = fs.readFileSync(sfile,'utf-8');
+		let content = yaml.parse(contentString);
+		let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
+		return [fdetails.parentPath, fileRegexes];
+	});
+
+	return pathsRegexes;
 }

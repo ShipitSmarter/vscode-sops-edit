@@ -7,14 +7,7 @@ import * as c from './utilities/constants';
 export async function activate(context: vscode.ExtensionContext) {
 	
 	// find all filepath/regex combinations in all .sops.yaml files
-	var sopsFiles =  await f.getWorkspaceFiles(c.sopsYamlGlob);
-	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
-		let fdetails = f.dissectPath(sfile);
-		let contentString: string = fs.readFileSync(sfile,'utf-8');
-		let content = yaml.parse(contentString);
-		let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
-		return [fdetails.parentPath, fileRegexes];
-	});
+	var pathsRegexes : [string, string[]][] = await f.getSopsPatterns();
 
 	// initialize list of excluded files, which are TMP files created by 
 	// this extension, and sops-encrypted files marked for direct editing
