@@ -5,10 +5,6 @@ import * as f from './utilities/functions';
 import * as c from './utilities/constants';
 
 export async function activate(context: vscode.ExtensionContext) {
-	
-	// find all filepath/regex combinations in all .sops.yaml files
-	//var pathsRegexes : [string, string[]][] = await f.getSopsPatterns();
-
 	// initialize list of excluded files, which are TMP files created by 
 	// this extension, and sops-encrypted files marked for direct editing
 	var excludedFiles : string[] = [];
@@ -26,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 
 		// prep
-		var fpn = f.dissectPath(openDocument.fileName);
+		var fpn: f.PathDetails = f.dissectPath(openDocument.fileName);
 		var [path, filepath, file, purename, ext] = [fpn.parentPath, fpn.filePath, fpn.fileName, fpn.filePureName, fpn.extension ];
 		var tempfile = `${purename}.${c.tempFilePreExtension}.${ext}`;
 		var tempfilepath = `${path}/${tempfile}`;
@@ -41,7 +37,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// save and encrypt when tmp file is updated
 		vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
-			let fdetails = f.dissectPath(e.fileName);
+			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
 			if (fdetails.filePath === tempfilepath) {
 				let contents = e.getText().trim();
 				if (contents !== original) {
@@ -53,7 +49,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// delete tmp file when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-			let fdetails = f.dissectPath(e.fileName);
+			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
 			if (fdetails.filePath === tempfilepath) {
 				// close terminal, delete tmp file
 				f.executeInTerminal(['exit'],encryptTerminal);
@@ -69,39 +65,32 @@ export async function activate(context: vscode.ExtensionContext) {
 		// open tmp file when terminal exits
 		vscode.window.onDidCloseTerminal(t => { 
 			if (t === decryptTerminal && t.exitStatus) {
-				// open
-				let openPath = vscode.Uri.file(filepath.replace(file, tempfile));
 				// keep original decrypted string for comparison
 				original = fs.readFileSync(tempfilepath, 'utf-8').trim();
 
-				// last because asynchronous
-				//vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
-				vscode.commands.executeCommand('vscode.open',openPath);
+				// open
+				f.openFile(filepath.replace(file, tempfile));
 			}
 		}); 
 	});
 
 	// allow direct edit by rmm button
 	let disposable = vscode.commands.registerCommand('sops-edit.direct-edit', (uri, files) => {
-		var fpn = f.dissectPath(files);
+		var fpn: f.PathDetails = f.dissectPath(files);
 
 		// add to excluded files
 		excludedFiles.push(fpn.filePath);
 
 		// remove from excluded files when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-			let fdetails = f.dissectPath(e.fileName);
+			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
 			if (fdetails.filePath === fpn.filePath && excludedFiles.includes(fdetails.filePath)) {
 				excludedFiles.splice(excludedFiles.indexOf(fdetails.filePath),1);
 			}
 		});
 
 		// open
-		let openPath = vscode.Uri.file(fpn.filePath);
-
-		// last because asynchronous
-		//vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
-		vscode.commands.executeCommand('vscode.open',openPath);
+		f.openFile(fpn.filePath);
 	});
 	context.subscriptions.push(disposable);
 }

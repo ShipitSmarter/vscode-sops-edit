@@ -4,6 +4,15 @@ import * as yaml from "yaml";
 import * as vscode from "vscode";
 import * as c from "./constants";
 
+export type PatternSet = [string, string[]];
+export type PathDetails = {
+	filePath:string, 
+	fileName:string, 
+	parentPath:string, 
+	filePureName:string, 
+	extension:string
+};
+
 export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
 	// get path to file in workspace
 	let functionsFiles = await vscode.workspace.findFiles(matchString);
@@ -49,7 +58,7 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 	return terminal;
 }
 
-export function dissectPath(files:any[] | string) : {filePath:string, fileName:string, parentPath:string, filePureName:string, extension:string} {
+export function dissectPath(files:any[] | string) : PathDetails {
 	// interpret arguments
 	let fspath: string = '';
 	if(Array.isArray(files) && files.length >0) {
@@ -94,7 +103,7 @@ export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 	// the .sops.yaml file location, and return if given file path matches any
 	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
 	for (const sf of sopsFiles) {
-		var pr = getSopsPatternsFromFile(sf);
+		var pr: PatternSet = getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
 				return true;
@@ -104,10 +113,15 @@ export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 	return false;
 }
 
-export function getSopsPatternsFromFile(file:string) : [string, string[]] {
-	let fdetails = dissectPath(file);
+export function getSopsPatternsFromFile(file:string) : PatternSet {
+	let fdetails: PathDetails = dissectPath(file);
 	let contentString: string = fs.readFileSync(file,'utf-8');
 	let content = yaml.parse(contentString);
-	let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
+	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
 	return [fdetails.parentPath, fileRegexes];
+}
+
+export async function openFile(filepath:string) : Promise<void> {
+	let openPath = vscode.Uri.file(filepath);
+	vscode.commands.executeCommand('vscode.open',openPath);
 }
