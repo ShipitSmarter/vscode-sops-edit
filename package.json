@@ -1,13 +1,23 @@
 {
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
-  "description": "",
+  "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "ShipitSmarter",
+    "SOPS",
+    "easy",
+    "edit",
+    "update",
+    "encrypt",
+    "decrypt",
+    "auto"
   ],
   "activationEvents": [
     "*"
