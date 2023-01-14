@@ -34,7 +34,7 @@
       "explorer/context": [
         {
           "command": "sops-edit.direct-edit",
-          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|jsonc)$/",
+          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|env|ini|txt)$/",
           "group": "sops-edit"
         }
       ]

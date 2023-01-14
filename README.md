@@ -34,14 +34,14 @@ It does so by doing the following:
 
 ![SOPS edit directly](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
 
-This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`json`/`jsonc` file (even when not SOPS encrypted).
+This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`json`/`env`/`ini`/`txt` file (even when not SOPS encrypted).
 
 It allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
 
 ## Limitations
 This extension has the following limitations:
 - Only SOPS config files named `.sops.yaml` are taken into account
-- The `SOPS: edit directly` button is only available to `yaml`/`json`/`jsonc` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
+- The `SOPS: edit directly` button is only available to `yaml`/`json`/`env`/`ini`/`txt` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
