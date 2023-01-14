@@ -14,6 +14,21 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "commands": [
+      {
+        "command": "vscode-sops-edit.direct-edit",
+        "title": "SOPS: edit directly"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-sops-edit.direct-edit",
+          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|jsonc)$/",
+          "group": "sops-edit"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

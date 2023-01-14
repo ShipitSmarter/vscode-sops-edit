@@ -6,7 +6,7 @@ import * as f from './utilities/functions';
 export async function activate(context: vscode.ExtensionContext) {
 	
 	// find all filepath/regex combinations in all .sops.yaml files
-	var sopsFiles =  (await f.getWorkspaceFiles('**/*.sops.yaml')).filter(f => !f.includes('/bin/'));
+	var sopsFiles =  await f.getWorkspaceFiles('**/*.sops.yaml');
 	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
 		let fdetails = f.dissectPath(sfile);
 		let contentString: string = fs.readFileSync(sfile,'utf-8');
@@ -15,10 +15,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		return [fdetails.parentPath, fileRegexes];
 	});
 
+	// initialize list of excluded files, which are TMP files created by 
+	// this extension, and sops-encrypted files marked for direct editing
+	var excludedFiles : string[] = [];
+
 	vscode.workspace.onDidOpenTextDocument((openDocument:vscode.TextDocument) => {
-		// only apply if this is a sops encrypted file
+		// only apply if this is a non-excluded sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
-		if (!f.fileIsSopsEncrypted(filePath,pathsRegexes) ) {
+		let isNotSopsEncr: boolean = !f.fileIsSopsEncrypted(filePath,pathsRegexes);
+		let isExcluded: boolean = excludedFiles.includes(filePath);
+		if (isNotSopsEncr || isExcluded ) {
 			return;
 		}
 
@@ -30,6 +36,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		var [path, filepath, file, purename, ext] = [fpn.parentPath, fpn.filePath, fpn.fileName, fpn.filePureName, fpn.extension ];
 		var tempfile = `${purename}.tmp.${ext}`;
 		var tempfilepath = `${path}/${tempfile}`;
+		
+		// add tmp file to excluded files
+		excludedFiles.push(tempfilepath);
 
 		// decrypt
 		let decryptTerminal: vscode.Terminal = f.decrypt(path,file, tempfile);
@@ -39,7 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		// save and encrypt when tmp file is updated
 		vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
 			let fdetails = f.dissectPath(e.fileName);
-			if (fdetails.fileName === tempfile) {
+			if (fdetails.filePath === tempfilepath) {
 				let contents = e.getText().trim();
 				if (contents !== original) {
 					original = contents;
@@ -50,10 +59,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		// delete tmp file when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-			let fdetails = f.dissectPath(e.fileName.replace(/\.git$/,''));
-			if (fdetails.fileName === tempfile) {
+			let fdetails = f.dissectPath(e.fileName);
+			if (fdetails.filePath === tempfilepath) {
+				// close terminal, delete tmp file
 				f.executeInTerminal(['exit'],encryptTerminal);
 				fs.unlinkSync(fdetails.filePath);
+
+				// remove from excluded files
+				if (excludedFiles.includes(fdetails.filePath)) {
+					excludedFiles.splice(excludedFiles.indexOf(fdetails.filePath),1);
+				}
 			}
 		});
 
@@ -72,8 +87,28 @@ export async function activate(context: vscode.ExtensionContext) {
 		}); 
 	});
 
-	// let disposable = vscode.commands.registerCommand('vscode-sops-edit.decrypt', (uri, files) => {}
-	// context.subscriptions.push(disposable);
+	let disposable = vscode.commands.registerCommand('vscode-sops-edit.direct-edit', (uri, files) => {
+		var fpn = f.dissectPath(files);
+
+		// add to excluded files
+		excludedFiles.push(fpn.filePath);
+
+		// remove from excluded files when closed
+		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
+			let fdetails = f.dissectPath(e.fileName);
+			if (fdetails.filePath === fpn.filePath && excludedFiles.includes(fdetails.filePath)) {
+				excludedFiles.splice(excludedFiles.indexOf(fdetails.filePath),1);
+			}
+		});
+
+		// open
+		let openPath = vscode.Uri.file(fpn.filePath);
+
+		// last because asynchronous
+		//vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
+		vscode.commands.executeCommand('vscode.open',openPath);
+	});
+	context.subscriptions.push(disposable);
 }
 
 // this method is called when your extension is deactivated
