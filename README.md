@@ -20,7 +20,7 @@ It does so by doing the following:
 - Whenever you try to open a SOPS encrypted file `*`, it immediately closes it, creates a decrypted `tmp` file, and opens that instead
 - Updating the `tmp` file will result in an updated, original SOPS encrypted file
 - Closing the `tmp` file will automatically delete the `tmp` file as well, making sure decrypted data never stays on disk and is never accidentally committed
-- It is still possible to edit the SOPS encrypted file directly, if desired, by right-mouse-clicking the button in the left explorer bar, and selecting `SOPS: edit directly`
+- It is still possible to edit the SOPS encrypted file directly, if desired, by right-mouse-clicking the encrypted file in the left explorer bar, and selecting `SOPS: edit directly`
 
 `*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
 
