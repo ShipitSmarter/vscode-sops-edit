@@ -7,16 +7,16 @@ import * as c from './utilities/constants';
 export async function activate(context: vscode.ExtensionContext) {
 	
 	// find all filepath/regex combinations in all .sops.yaml files
-	var pathsRegexes : [string, string[]][] = await f.getSopsPatterns();
+	//var pathsRegexes : [string, string[]][] = await f.getSopsPatterns();
 
 	// initialize list of excluded files, which are TMP files created by 
 	// this extension, and sops-encrypted files marked for direct editing
 	var excludedFiles : string[] = [];
 
-	vscode.workspace.onDidOpenTextDocument((openDocument:vscode.TextDocument) => {
+	vscode.workspace.onDidOpenTextDocument(async (openDocument:vscode.TextDocument) => {
 		// only apply if this is a non-excluded sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
-		let isNotSopsEncr: boolean = !f.fileIsSopsEncrypted(filePath,pathsRegexes);
+		let isNotSopsEncr: boolean = !(await f.fileIsSopsEncrypted(filePath));
 		let isExcluded: boolean = excludedFiles.includes(filePath);
 		if (isNotSopsEncr || isExcluded ) {
 			return;

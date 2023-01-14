@@ -89,10 +89,12 @@ export function decrypt(path:string, file:string, tempfile:string): vscode.Termi
 	return terminal;
 }
 
-export function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]][]) : boolean {
+export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
-	for (const pr of pathsRegexes) {
+	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
+	for (const sf of sopsFiles) {
+		var pr = getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
 				return true;
@@ -102,16 +104,10 @@ export function fileIsSopsEncrypted(file:string, pathsRegexes: [string, string[]
 	return false;
 }
 
-export async function getSopsPatterns() : Promise<[string, string[]][]> {
-	// find all filepath/regex combinations in all .sops.yaml files
-	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
-	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
-		let fdetails = dissectPath(sfile);
-		let contentString: string = fs.readFileSync(sfile,'utf-8');
-		let content = yaml.parse(contentString);
-		let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
-		return [fdetails.parentPath, fileRegexes];
-	});
-
-	return pathsRegexes;
+export function getSopsPatternsFromFile(file:string) : [string, string[]] {
+	let fdetails = dissectPath(file);
+	let contentString: string = fs.readFileSync(file,'utf-8');
+	let content = yaml.parse(contentString);
+	let fileRegexes = content.creation_rules.map((cr:any) => cr.path_regex);
+	return [fdetails.parentPath, fileRegexes];
 }
