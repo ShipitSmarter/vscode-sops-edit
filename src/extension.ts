@@ -2,11 +2,12 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as yaml from 'yaml';
 import * as f from './utilities/functions';
+import * as c from './utilities/constants';
 
 export async function activate(context: vscode.ExtensionContext) {
 	
 	// find all filepath/regex combinations in all .sops.yaml files
-	var sopsFiles =  await f.getWorkspaceFiles('**/*.sops.yaml');
+	var sopsFiles =  await f.getWorkspaceFiles(c.sopsYamlGlob);
 	var pathsRegexes : [string, string[]][] = sopsFiles.map(sfile => {
 		let fdetails = f.dissectPath(sfile);
 		let contentString: string = fs.readFileSync(sfile,'utf-8');
@@ -34,15 +35,15 @@ export async function activate(context: vscode.ExtensionContext) {
 		// prep
 		var fpn = f.dissectPath(openDocument.fileName);
 		var [path, filepath, file, purename, ext] = [fpn.parentPath, fpn.filePath, fpn.fileName, fpn.filePureName, fpn.extension ];
-		var tempfile = `${purename}.tmp.${ext}`;
+		var tempfile = `${purename}.${c.tempFilePreExtension}.${ext}`;
 		var tempfilepath = `${path}/${tempfile}`;
 		
 		// add tmp file to excluded files
 		excludedFiles.push(tempfilepath);
 
-		// decrypt
+		// open terminals
 		let decryptTerminal: vscode.Terminal = f.decrypt(path,file, tempfile);
-		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal('sops (encrypt)'));
+		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal(c.terminalEncryptName));
 		var original:string = '';
 
 		// save and encrypt when tmp file is updated
@@ -87,6 +88,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}); 
 	});
 
+	// allow direct edit by rmm button
 	let disposable = vscode.commands.registerCommand('vscode-sops-edit.direct-edit', (uri, files) => {
 		var fpn = f.dissectPath(files);
 

@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as vscode from "vscode";
+import * as c from "./constants";
 
 export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
 	// get path to file in workspace
@@ -82,7 +83,7 @@ export function encrypt(path:string, file:string, terminal:vscode.Terminal): vsc
 }
 
 export function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
-	let terminal: vscode.Terminal = cdToLocation(path, vscode.window.createTerminal('sops (decrypt)'));
+	let terminal: vscode.Terminal = cdToLocation(path, vscode.window.createTerminal(c.terminalDecryptName));
 	executeInTerminal([`sops -d ${file} > ${tempfile}`,'exit'], terminal);
 	return terminal;
 }
