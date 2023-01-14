@@ -1,70 +1,50 @@
-# vscode-sops-edit README
+# SOPS easy edit
 
-This is the README for your extension "vscode-sops-edit". After writing up a brief description, we recommend including the following sections.
+[![](https://vsmarketplacebadge.apphb.com/version-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
+[![](https://vsmarketplacebadge.apphb.com/installs-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
+[![](https://vsmarketplacebadge.apphb.com/rating-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
 
-## Features
+![SOPS edit use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_use_gif.gif)
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Once you have [SOPS](https://github.com/mozilla/sops) setup for your [GIT](https://git-scm.com/) project, it can be a pain in the behind trying to not forget decrypting SOPS encrypted files before editing, and encrypting them again before committing.
 
-For example if there is an image subfolder under your extension project workspace:
+This extension makes sure you don't have to think about that anymore. It will allow you to only see and edit decrypted files, but only save and commit the encrypted versions.
 
-\!\[feature X\]\(images/feature-x.png\)
+## But How?
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+This extension is built to facilitate the following:
+- Easy update of [SOPS](https://github.com/mozilla/sops) encrypted files, without the need to manually decrypt/encrypt
+- Ensuring no decrypted files accidentally are either _committed_ OR _left on disk_
+
+It does so by doing the following:
+- Whenever you try to open a SOPS encrypted file `*`, it immediately closes it, creates a decrypted `tmp` file, and opens that instead
+- Updating the `tmp` file will result in an updated, original SOPS encrypted file
+- Closing the `tmp` file will automatically delete the `tmp` file as well, making sure decrypted data never stays on disk and is never accidentally committed
+- It is still possible to edit the SOPS encrypted file directly, if desired, by right-mouse-clicking the button in the left explorer bar, and selecting `SOPS: edit directly`
+
+`*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
 
 ## Requirements
+- You need [SOPS](https://github.com/mozilla/sops) installed
+  - You also need to take care of setting up the authentication etc yourself
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Contributions
 
-## Extension Settings
+### Right-mouse-button `SOPS: edit directly`
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+![SOPS edit directly](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
 
-For example:
+This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`json`/`jsonc` file (even when not SOPS encrypted).
 
-This extension contributes the following settings:
+It allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+## Limitations
+This extension has the following limitations:
+- Only SOPS config files named `.sops.yaml` are taken into account
+- The `SOPS: edit directly` button is only available to `yaml`/`json`/`jsonc` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
 
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+## Dependencies
+This extension happily makes use of the following outstanding `npm` packages:
+- [NodeJs](https://nodejs.org/en/)'s [File System API](https://nodejs.org/api/fs.html)
+- [eemeli](https://www.npmjs.com/~eemeli)'s excellent [YAML](https://www.npmjs.com/package/yaml) package
+- [Path](https://www.npmjs.com/package/path)

@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	// allow direct edit by rmm button
-	let disposable = vscode.commands.registerCommand('vscode-sops-edit.direct-edit', (uri, files) => {
+	let disposable = vscode.commands.registerCommand('sops-edit.direct-edit', (uri, files) => {
 		var fpn = f.dissectPath(files);
 
 		// add to excluded files

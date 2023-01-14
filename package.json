@@ -1,6 +1,6 @@
 {
-  "name": "vscode-sops-edit",
-  "displayName": "SOPS edit",
+  "name": "sops-edit",
+  "displayName": "SOPS easy edit",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -16,14 +16,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "vscode-sops-edit.direct-edit",
+        "command": "sops-edit.direct-edit",
         "title": "SOPS: edit directly"
       }
     ],
     "menus": {
       "explorer/context": [
         {
-          "command": "vscode-sops-edit.direct-edit",
+          "command": "sops-edit.direct-edit",
           "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|json|jsonc)$/",
           "group": "sops-edit"
         }
