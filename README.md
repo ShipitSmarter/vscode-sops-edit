@@ -25,10 +25,14 @@ It does so by doing the following:
 `*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
 
 ## Requirements
-- You need [SOPS](https://github.com/mozilla/sops) installed
-  - You also need to take care of setting up the authentication etc yourself
+- You need [SOPS](https://github.com/mozilla/sops) installed and configured, including:
+  - setting up the authentication with desired encryption services
+  - configuration of `.sops.yaml` files
 
 ## Contributions
+
+### `onDidOpenTextDocument` listener
+This extension adds a listener that checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
 
 ### Right-mouse-button `SOPS: edit directly`
 
@@ -42,6 +46,11 @@ It allows you to see and edit the SOPS encrypted file directly, without the exte
 This extension has the following limitations:
 - Only SOPS config files named `.sops.yaml` are taken into account
 - The `SOPS: edit directly` button is only available to `yaml`/`yml`/`json`/`env`/`ini`/`txt` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
+
+This extension does NOT do or help with any of the following:
+- Installation of SOPS
+- Login or authentication with encryption services
+- Configuration of `.sops.yaml` files
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
