@@ -9,11 +9,13 @@ export async function activate(context: vscode.ExtensionContext) {
 	var excludedFiles : string[] = [];
 
 	vscode.workspace.onDidOpenTextDocument(async (openDocument:vscode.TextDocument) => {
-		// only apply if this is a non-excluded sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
+
+		// only apply if this is a non-excluded sops encrypted file (and not a .git copy)
 		let isNotSopsEncrypted: boolean = !(await f.fileIsSopsEncrypted(filePath));
 		let isExcluded: boolean = excludedFiles.includes(filePath);
-		if (isNotSopsEncrypted || isExcluded ) {
+		let isGitCopy = /\.git$/.test(filePath);
+		if (isNotSopsEncrypted || isExcluded || isGitCopy ) {
 			return;
 		}
 

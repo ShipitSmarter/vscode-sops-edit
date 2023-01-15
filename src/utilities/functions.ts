@@ -35,7 +35,7 @@ export function getExtensionFile(context: vscode.ExtensionContext, folder: strin
 }
 
 export function cleanPath (path: string) : string {
-	return path.replace(/\\/g, '/').replace('//','/').replace(/\.git$/,'');
+	return path.replace(/\\/g, '/').replace('//','/');
 }
 
 export function parentPath (path: string) : string {
