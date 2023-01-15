@@ -14,7 +14,7 @@ export type PathDetails = {
 };
 
 export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
-	// get path to file in workspace
+	// get paths to files in workspace that match a glob pattern
 	let functionsFiles = await vscode.workspace.findFiles(matchString);
 	let outFiles: string[] = [];
 	for (let index = 0; index < functionsFiles.length; index++) {
@@ -23,23 +23,23 @@ export async function getWorkspaceFiles(matchString: string): Promise<string[]> 
 	return outFiles;
 }
 
-export function getExtensionFile(context: vscode.ExtensionContext, folder: string, file: string): string {
-	// get path to file in extension folder
+export function getExtensionFile(context: vscode.ExtensionContext, subDirectory: string, fileName: string): string {
+	// get path to file in extension subdirectory
 	let fileRawPath = vscode.Uri.file(
-		path.join(context.extensionPath, folder, file)
+		path.join(context.extensionPath, subDirectory, fileName)
 	);
 
 	let filePathEscaped : string = fileRawPath.toString();
-	let filePath = vscode.Uri.parse(filePathEscaped).fsPath;
+	let filePath = cleanPath(vscode.Uri.parse(filePathEscaped).fsPath);
 	return filePath;
 }
 
-export function cleanPath (path: string) : string {
-	return path.replace(/\\/g, '/').replace('//','/');
+export function cleanPath (anyPath: string) : string {
+	return anyPath.replace(/\\/g, '/').replace('//','/');
 }
 
-export function parentPath (path: string) : string {
-	return path.replace(/\/[^\/]+$/,'');
+export function parentPath (filePath: string) : string {
+	return filePath.replace(/\/[^\/]+$/,'');
 }
 
 export function createTerminalAndCdToLocation(location:string, name:string = '') : vscode.Terminal {
@@ -55,9 +55,6 @@ export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.
 }
 
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
-	// execute commands in terminal
-	//terminal.show();
-
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
 	}
@@ -73,43 +70,43 @@ export function dissectPath(files:any[] | string) : PathDetails {
 		fspath=  files;
 	}
 
-	let fp = cleanPath(fspath);
-	let fn = fp.split('/').pop() ?? '';
+	let fPath = cleanPath(fspath);
+	let fName = fPath.split('/').pop() ?? '';
 
 	return {
-		filePath: fp,
-		fileName: fn,
-		parentPath: parentPath(fp),
-		filePureName: fn.replace(/\.[^\.]*$/,''),
-		extension: fn.split('.').pop() ?? ''
+		filePath: fPath,
+		fileName: fName,
+		parentPath: parentPath(fPath),
+		filePureName: fName.replace(/\.[^\.]*$/,''),
+		extension: fName.split('.').pop() ?? ''
 	};
 }
 
-export function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
-	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
-	encrypt(path, file, tempfile, terminal);
+export function copyEncrypt(parentPath:string, fileName:string, tempFileName:string, terminal: vscode.Terminal) : void {
+	fs.copyFileSync(`${parentPath}/${tempFileName}`,`${parentPath}/${fileName}`);
+	encrypt(fileName, tempFileName, terminal);
 }
 
-export function encrypt(path:string, file:string, tempfile:string, terminal:vscode.Terminal): void {
-	executeInTerminal([replaceInCommand(c.encryptionCommand,file,tempfile)], terminal);
+export function encrypt(fileName:string, tempFileName:string, terminal:vscode.Terminal): void {
+	executeInTerminal([replaceInCommand(c.encryptionCommand,fileName,tempFileName)], terminal);
 }
 
-export function decrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal): void {
-	executeInTerminal([replaceInCommand(c.decryptionCommand,file,tempfile),'exit'], terminal);
+export function decrypt(fileName:string, tempFileName:string, terminal: vscode.Terminal): void {
+	executeInTerminal([replaceInCommand(c.decryptionCommand,fileName,tempFileName),'exit'], terminal);
 }
 
-export function replaceInCommand(command:string, file:string, tempfile:string) : string {
-	return command.replace(c.fileString,file).replace(c.tempFileString,tempfile);
+export function replaceInCommand(command:string, fileName:string, tempFileName:string) : string {
+	return command.replace(c.fileString,fileName).replace(c.tempFileString,tempFileName);
 }
 
-export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
+export async function fileIsSopsEncrypted(filePath:string) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
 	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
 	for (const sf of sopsFiles) {
 		var pr: PatternSet = getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
-			if (new RegExp(`${pr[0]}/.*${re}`).test(file)) {
+			if (new RegExp(`${pr[0]}/.*${re}`).test(filePath)) {
 				return true;
 			}
 		}
@@ -117,17 +114,17 @@ export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 	return false;
 }
 
-export function getSopsPatternsFromFile(file:string) : PatternSet {
+export function getSopsPatternsFromFile(sopsFilePath:string) : PatternSet {
 	// open .sops.yaml file, extract path_regex patterns,
 	// combine with file location to return a PatternSet
-	let fdetails: PathDetails = dissectPath(file);
-	let contentString: string = fs.readFileSync(file,'utf-8');
+	let sopsFile: PathDetails = dissectPath(sopsFilePath);
+	let contentString: string = fs.readFileSync(sopsFilePath,'utf-8');
 	let content = yaml.parse(contentString);
 	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
-	return [fdetails.parentPath, fileRegexes];
+	return [sopsFile.parentPath, fileRegexes];
 }
 
-export async function openFile(filepath:string) : Promise<void> {
-	let openPath = vscode.Uri.file(filepath);
+export async function openFile(filePath:string) : Promise<void> {
+	let openPath = vscode.Uri.file(filePath);
 	vscode.commands.executeCommand('vscode.open',openPath);
 }
