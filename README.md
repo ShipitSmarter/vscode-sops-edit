@@ -55,5 +55,4 @@ This extension does NOT do or help with any of the following:
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
 - [NodeJs](https://nodejs.org/en/)'s [File System API](https://nodejs.org/api/fs.html)
-- [eemeli](https://www.npmjs.com/~eemeli)'s excellent [YAML](https://www.npmjs.com/package/yaml) package
-- [Path](https://www.npmjs.com/package/path)
+- [eemeli](https://www.npmjs.com/~eemeli)'s excellent [yaml](https://www.npmjs.com/package/yaml) package

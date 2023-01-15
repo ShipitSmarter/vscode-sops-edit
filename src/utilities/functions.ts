@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as path from "path";
 import * as yaml from "yaml";
 import * as vscode from "vscode";
 import * as c from "./constants";
@@ -21,17 +20,6 @@ export async function getWorkspaceFiles(matchString: string): Promise<string[]> 
 		outFiles[index] = cleanPath(functionsFiles[index].fsPath);
 	}
 	return outFiles;
-}
-
-export function getExtensionFile(context: vscode.ExtensionContext, subDirectory: string, fileName: string): string {
-	// get path to file in extension subdirectory
-	let fileRawPath = vscode.Uri.file(
-		path.join(context.extensionPath, subDirectory, fileName)
-	);
-
-	let filePathEscaped : string = fileRawPath.toString();
-	let filePath = cleanPath(vscode.Uri.parse(filePathEscaped).fsPath);
-	return filePath;
 }
 
 export function cleanPath (anyPath: string) : string {
