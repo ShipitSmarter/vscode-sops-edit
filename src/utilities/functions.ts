@@ -42,6 +42,12 @@ export function parentPath (path: string) : string {
 	return path.replace(/\/[^\/]+$/,'');
 }
 
+export function createTerminalAndCdToLocation(location:string, name:string = '') : vscode.Terminal {
+	let terminal = vscode.window.createTerminal(name);
+	cdToLocation(location, terminal);
+	return terminal;
+}
+
 export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
 	//terminal.show();
 	terminal.sendText(`cd ${location}`);
@@ -59,9 +65,9 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 }
 
 export function dissectPath(files:any[] | string) : PathDetails {
-	// interpret arguments
 	let fspath: string = '';
 	if(Array.isArray(files) && files.length >0) {
+		// if input is from a vscode.commands.registerCommand lambda
 		fspath = files[0].fsPath;
 	} else if (typeof files === 'string') {
 		fspath=  files;
@@ -80,20 +86,16 @@ export function dissectPath(files:any[] | string) : PathDetails {
 }
 
 export function copyEncrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal) : void {
-	// save to original file and encrypt
 	fs.copyFileSync(`${path}/${tempfile}`,`${path}/${file}`);
 	encrypt(path, file, tempfile, terminal);
 }
 
-export function encrypt(path:string, file:string, tempfile:string, terminal:vscode.Terminal): vscode.Terminal {
+export function encrypt(path:string, file:string, tempfile:string, terminal:vscode.Terminal): void {
 	executeInTerminal([replaceInCommand(c.encryptionCommand,file,tempfile)], terminal);
-	return terminal;
 }
 
-export function decrypt(path:string, file:string, tempfile:string): vscode.Terminal {
-	let terminal: vscode.Terminal = cdToLocation(path, vscode.window.createTerminal(c.terminalDecryptName));
+export function decrypt(path:string, file:string, tempfile:string, terminal: vscode.Terminal): void {
 	executeInTerminal([replaceInCommand(c.decryptionCommand,file,tempfile),'exit'], terminal);
-	return terminal;
 }
 
 export function replaceInCommand(command:string, file:string, tempfile:string) : string {
@@ -116,8 +118,8 @@ export async function fileIsSopsEncrypted(file:string) : Promise<boolean> {
 }
 
 export function getSopsPatternsFromFile(file:string) : PatternSet {
-	// open .sops.yaml file, extract path_regex patterns, combine with
-	// file location to return a PatternSet
+	// open .sops.yaml file, extract path_regex patterns,
+	// combine with file location to return a PatternSet
 	let fdetails: PathDetails = dissectPath(file);
 	let contentString: string = fs.readFileSync(file,'utf-8');
 	let content = yaml.parse(contentString);

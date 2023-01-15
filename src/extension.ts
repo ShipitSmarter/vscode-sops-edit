@@ -11,9 +11,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.workspace.onDidOpenTextDocument(async (openDocument:vscode.TextDocument) => {
 		// only apply if this is a non-excluded sops encrypted file
 		let filePath = f.cleanPath(openDocument.fileName);
-		let isNotSopsEncr: boolean = !(await f.fileIsSopsEncrypted(filePath));
+		let isNotSopsEncrypted: boolean = !(await f.fileIsSopsEncrypted(filePath));
 		let isExcluded: boolean = excludedFiles.includes(filePath);
-		if (isNotSopsEncr || isExcluded ) {
+		if (isNotSopsEncrypted || isExcluded ) {
 			return;
 		}
 
@@ -29,24 +29,39 @@ export async function activate(context: vscode.ExtensionContext) {
 		// add tmp file to excluded files
 		excludedFiles.push(tempfilepath);
 
-		// open terminals
-		let decryptTerminal: vscode.Terminal = f.decrypt(path,file, tempfile);
-		let encryptTerminal: vscode.Terminal = f.cdToLocation(path,vscode.window.createTerminal(c.terminalEncryptName));
-		var original:string = '';
+		// prep terminals
+		let decryptTerminal = f.createTerminalAndCdToLocation(path, c.terminalDecryptName);
+		let encryptTerminal = f.createTerminalAndCdToLocation(path, c.terminalEncryptName);
 
-		// save and encrypt when tmp file is updated
+		// decrypt
+		f.decrypt(path,file, tempfile, decryptTerminal);
+
+		var currentDecryptedText:string = '';
+
+		// add listener to open tmp file when terminal exits
+		vscode.window.onDidCloseTerminal(t => { 
+			if (t === decryptTerminal && t.exitStatus) {
+				// update decrypted string for comparison
+				currentDecryptedText = fs.readFileSync(tempfilepath, 'utf-8').trim();
+
+				// open
+				f.openFile(filepath.replace(file, tempfile));
+			}
+		});
+
+		// add listener to save and encrypt when tmp file is updated
 		vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
 			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
 			if (fdetails.filePath === tempfilepath) {
 				let contents = e.getText().trim();
-				if (contents !== original) {
-					original = contents;
+				if (contents !== currentDecryptedText) {
+					currentDecryptedText = contents;
 					f.copyEncrypt(path, file, tempfile, encryptTerminal);
 				}
 			}
 		});
 
-		// delete tmp file when closed
+		// add listener to delete tmp file when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
 			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
 			if (fdetails.filePath === tempfilepath) {
@@ -59,17 +74,6 @@ export async function activate(context: vscode.ExtensionContext) {
 					excludedFiles.splice(excludedFiles.indexOf(fdetails.filePath),1);
 				}
 			}
-		});
-
-		// open tmp file when terminal exits
-		vscode.window.onDidCloseTerminal(t => { 
-			if (t === decryptTerminal && t.exitStatus) {
-				// keep original decrypted string for comparison
-				original = fs.readFileSync(tempfilepath, 'utf-8').trim();
-
-				// open
-				f.openFile(filepath.replace(file, tempfile));
-			}
 		}); 
 	});
 
@@ -80,10 +84,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		// add to excluded files
 		excludedFiles.push(fpn.filePath);
 
-		// remove from excluded files when closed
+		// add listener to remove from excluded files when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
 			let fdetails: f.PathDetails = f.dissectPath(e.fileName);
-			if (fdetails.filePath === fpn.filePath && excludedFiles.includes(fdetails.filePath)) {
+			let isClosedDocumentThisDocument = fdetails.filePath === fpn.filePath && excludedFiles.includes(fdetails.filePath);
+			if (isClosedDocumentThisDocument) {
 				excludedFiles.splice(excludedFiles.indexOf(fdetails.filePath),1);
 			}
 		});
@@ -94,5 +99,4 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}
