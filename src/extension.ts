@@ -62,8 +62,6 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 	var [parentPath, encryptedFileName] = [enc.parentPath, enc.fileName ];
 	var tempFileName = `${enc.filePureName}.${c.tempFilePreExtension}.${enc.extension}`;
 	var tempFilePath = `${parentPath}/${tempFileName}`;
-
-	var decryptionString = 'Decrypting ' + encryptedFileName + ' ...';
 	
 	// add tmp file to excluded files
 	excludedFiles.push(tempFilePath);
@@ -74,7 +72,7 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 
 	// async decrypt with progress
 	await vscode.window.withProgress(
-		{location: vscode.ProgressLocation.Notification, cancellable: false, title: decryptionString}, 
+		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, encryptedFileName)}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
 			var done = [false];
