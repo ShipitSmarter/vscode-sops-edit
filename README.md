@@ -17,17 +17,25 @@ This extension is built to facilitate the following:
 - Ensuring no decrypted files accidentally are either _committed_ OR _left on disk_
 
 It does so by doing the following:
-- Whenever you try to open a SOPS encrypted file `*`, it immediately closes it, creates a decrypted `tmp` file, and opens that instead
+- Whenever you try to open a SOPS encrypted file `*`, the extension does the following:
+  - The encrypted file is immediately closed
+  - A decryption terminal is opened, decrypting the file to a `[filename].tmp.[file extension]` copy, and closed directly after
+  - An encryption terminal is opened
+  - The decrypted `tmp` file is opened instead
 - Updating the `tmp` file will result in an updated, original SOPS encrypted file
 - Closing the `tmp` file will automatically delete the `tmp` file as well, making sure decrypted data never stays on disk and is never accidentally committed
-- It is still possible to edit the SOPS encrypted file directly, if desired, by right-mouse-clicking the encrypted file in the left explorer bar, and selecting `SOPS: edit directly`
 
 `*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
+
+**NOTE**: It is still possible to edit the SOPS encrypted file directly, if desired, by right-mouse-clicking the encrypted file in the left explorer bar, and selecting `SOPS: edit directly`.
 
 ## Requirements
 - You need [SOPS](https://github.com/mozilla/sops) installed and configured, including:
   - setting up the authentication with desired encryption services
   - configuration of `.sops.yaml` files
+
+## Recommendations
+- It is highly recommended to add the pattern for the `tmp` files (`**/*.tmp.[extension]`) to your `.gitignore` file, to ensure a decrypted file is *never ever* committed.
 
 ## Contributions
 
@@ -41,6 +49,13 @@ This extension adds a listener that checks for every opened text document if it 
 This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file (even when not SOPS encrypted).
 
 It allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
+
+### Setting: `Temp File Pre Extension`
+
+![Setting: tmp file pre extension](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/setting_temp_file_pre_extension.png.png)
+
+This extension adds setting `Sops-edit: Temp File Pre Extension`, which allows you to change the default `tmp` pre-extension to something different.
+
 
 ## Limitations
 This extension has the following limitations:
