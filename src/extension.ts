@@ -76,7 +76,8 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 		async (progress) => {
 			progress.report({  increment: 0 });
 			var done = [false];
-			f.callInInteractiveTerminal(f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName), decryptTerminal).then(_ => {
+			var decryptCommand = f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName);
+			f.callInInteractiveTerminal(decryptCommand, decryptTerminal).then(_ => {
 				progress.report({ increment: 100 });
 				done[0] = true;
 				return;

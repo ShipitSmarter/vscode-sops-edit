@@ -94,6 +94,8 @@ export async function openFile(filePath:string) : Promise<void> {
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
+	// wrapper function for terminal call to make it async and 
+	// return promise once terminal is closed
 	terminal.sendText(command, false);
 	terminal.sendText("; exit");
 	return new Promise((resolve, reject) => {
