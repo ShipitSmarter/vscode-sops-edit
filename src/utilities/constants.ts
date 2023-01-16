@@ -9,3 +9,6 @@ export const encryptionCommand = 'sops -i -e [FILE]';
 export const decryptionCommand  = 'sops -d [FILE] > [TEMPFILE]';
 export const fileString = '[FILE]';
 export const tempFileString = '[TEMPFILE]';
+export const editQuestionString = 'What would you like to do with this SOPS-encrypted file?';
+export const editDirectlyString = 'Edit encrypted file directly';
+export const editDecryptedCopyString = 'Edit decrypted version';

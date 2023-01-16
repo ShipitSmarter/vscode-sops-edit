@@ -49,16 +49,8 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 	return terminal;
 }
 
-export function dissectPath(files:any[] | string) : PathDetails {
-	let fspath: string = '';
-	if(Array.isArray(files) && files.length >0) {
-		// if input is from a vscode.commands.registerCommand lambda
-		fspath = files[0].fsPath;
-	} else if (typeof files === 'string') {
-		fspath=  files;
-	}
-
-	let fPath = cleanPath(fspath);
+export function dissectPath(filePath: string) : PathDetails {
+	let fPath = cleanPath(filePath);
 	let fName = fPath.split('/').pop() ?? '';
 
 	return {
