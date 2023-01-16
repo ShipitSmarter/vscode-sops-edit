@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as f from './utilities/functions';
 import * as c from './utilities/constants';
+import { deflateSync } from 'zlib';
 
 export async function activate(context: vscode.ExtensionContext) {
 	// initialize list of excluded files, which are TMP files created by 
@@ -26,7 +27,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	});
 
 	// allow direct edit by rmm button
-	let disposable = vscode.commands.registerCommand('sops-edit.direct-edit', (uri, files) => {
+	let disposable = vscode.commands.registerCommand('sops-edit.direct-edit', (_, files) => {
 		if (files.length === 0) {
 			vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
 			return;
@@ -73,11 +74,25 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 
 	// async decrypt with progress
 	await vscode.window.withProgress(
-		{location: vscode.ProgressLocation.Window, cancellable: false, title: decryptionString}, 
+		{location: vscode.ProgressLocation.Notification, cancellable: false, title: decryptionString}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
-			await f.callInInteractiveTerminal(f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName), decryptTerminal);
-			progress.report({ increment: 100 });
+			var done = false;
+			f.callInInteractiveTerminal(f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName), decryptTerminal).then(_ => {
+				progress.report({ increment: 100 });
+				done = true;
+				return;
+			});
+			var rem = 100;
+			while(!done) {
+				await f.delay(1000);
+				let inc = Math.floor(rem/3);
+				rem -= inc;
+				if (inc > 1) {
+					progress.report({ increment: inc});
+				}
+			}
+			
 		}
 	);	
 

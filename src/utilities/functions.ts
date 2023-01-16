@@ -111,3 +111,7 @@ export async function callInInteractiveTerminal(command: string, terminal: vscod
 		);
 	});
 }
+
+export async function delay(ms: number) {
+    return new Promise( resolve => setTimeout(resolve, ms) );
+}
