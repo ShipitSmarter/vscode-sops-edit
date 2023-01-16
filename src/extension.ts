@@ -75,14 +75,14 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, encryptedFileName)}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
-			var done = [false];
+			var progressDetails = { isDone: false };
 			var decryptCommand = f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName);
 			f.callInInteractiveTerminal(decryptCommand, decryptTerminal).then(_ => {
 				progress.report({ increment: 100 });
-				done[0] = true;
+				progressDetails.isDone = true;
 				return;
 			});
-			await f.fakeProgressUpdate(progress,done);			
+			await f.fakeProgressUpdate(progress, progressDetails);			
 		}
 	);	
 
