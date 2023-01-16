@@ -1,0 +1,17 @@
+name: 'Build and Test'
+description: 'Build and run tests'
+runs:
+  using: 'composite'
+  steps:
+  - name: Install Node.js
+    uses: actions/setup-node@v1
+    with:
+      node-version: 16.x
+  - run: npm install
+    shell: bash
+  - run: xvfb-run -a npm test
+    if: runner.os == 'Linux'
+    shell: bash
+  - run: npm test
+    if: runner.os != 'Linux'
+    shell: bash
