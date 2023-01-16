@@ -30,18 +30,6 @@ export function parentPath (filePath: string) : string {
 	return filePath.replace(/\/[^\/]+$/,'');
 }
 
-export function createTerminalAndCdToLocation(location:string, name:string = '') : vscode.Terminal {
-	let terminal = vscode.window.createTerminal(name);
-	cdToLocation(location, terminal);
-	return terminal;
-}
-
-export function cdToLocation(location:string, terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
-	//terminal.show();
-	terminal.sendText(`cd ${location}`);
-	return terminal;
-}
-
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
@@ -69,10 +57,6 @@ export function copyEncrypt(parentPath:string, fileName:string, tempFileName:str
 
 export function encrypt(fileName:string, tempFileName:string, terminal:vscode.Terminal): void {
 	executeInTerminal([replaceInCommand(c.encryptionCommand,fileName,tempFileName)], terminal);
-}
-
-export function decrypt(fileName:string, tempFileName:string, terminal: vscode.Terminal): void {
-	executeInTerminal([replaceInCommand(c.decryptionCommand,fileName,tempFileName),'exit'], terminal);
 }
 
 export function replaceInCommand(command:string, fileName:string, tempFileName:string) : string {
@@ -108,3 +92,22 @@ export async function openFile(filePath:string) : Promise<void> {
 	let openPath = vscode.Uri.file(filePath);
 	vscode.commands.executeCommand('vscode.open',openPath);
 }
+
+export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
+	terminal.sendText(command, false);
+	terminal.sendText("; exit");
+	return new Promise((resolve, reject) => {
+	  const disposeToken = vscode.window.onDidCloseTerminal(
+		async (closedTerminal) => {
+		  if (closedTerminal === terminal) {
+			disposeToken.dispose();
+			if (terminal.exitStatus !== undefined) {
+			  resolve(terminal.exitStatus);
+			} else {
+			  reject("Terminal exited with undefined status");
+			}
+		  }
+		}
+	  );
+	});
+  }

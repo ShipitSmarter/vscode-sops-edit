@@ -22,7 +22,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 
 		await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-		editDecryptedTmpCopy(encryptedFilePath,excludedFiles);
+		await editDecryptedTmpCopy(encryptedFilePath,excludedFiles);
 	});
 
 	// allow direct edit by rmm button
@@ -55,37 +55,35 @@ function editDirectly(filePath:string, excludedFiles: string[]) : void {
 		f.openFile(directEditFile.filePath);
 }
 
-function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:string[]) : void {
+async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:string[]) : Promise<void> {
 	// prep
 	var enc: f.PathDetails = f.dissectPath(encryptedFilePath);
 	var [parentPath, encryptedFileName] = [enc.parentPath, enc.fileName ];
 	var tempFileName = `${enc.filePureName}.${c.tempFilePreExtension}.${enc.extension}`;
 	var tempFilePath = `${parentPath}/${tempFileName}`;
 
-	vscode.window.showInformationMessage('Decrypting ' + encryptedFileName + ' ...');
+	var decryptionString = 'Decrypting ' + encryptedFileName + ' ...';
 	
 	// add tmp file to excluded files
 	excludedFiles.push(tempFilePath);
 
 	// prep terminals
-	let decryptTerminal = f.createTerminalAndCdToLocation(parentPath, c.terminalDecryptName);
-	let encryptTerminal = f.createTerminalAndCdToLocation(parentPath, c.terminalEncryptName);
+	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parentPath});
+	const encryptTerminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: parentPath});
 
-	// decrypt
-	f.decrypt(encryptedFileName, tempFileName, decryptTerminal);
-
-	var currentDecryptedText:string = '';
-
-	// add listener to open tmp file when terminal exits
-	vscode.window.onDidCloseTerminal(t => { 
-		if (t === decryptTerminal && t.exitStatus) {
-			// update decrypted string for comparison
-			currentDecryptedText = fs.readFileSync(tempFilePath, 'utf-8').trim();
-
-			// open
-			f.openFile(tempFilePath);
+	// async decrypt with progress
+	await vscode.window.withProgress(
+		{location: vscode.ProgressLocation.Window, cancellable: false, title: decryptionString}, 
+		async (progress) => {
+			progress.report({  increment: 0 });
+			await f.callInInteractiveTerminal(f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName), decryptTerminal);
+			progress.report({ increment: 100 });
 		}
-	});
+	);	
+
+	// get decrypted string in order to later be able to detect changes
+	var currentDecryptedText = fs.readFileSync(tempFilePath, 'utf-8').trim();
+	f.openFile(tempFilePath);
 
 	// add listener to save and encrypt when tmp file is updated
 	vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
