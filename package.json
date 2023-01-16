@@ -38,6 +38,16 @@
           "group": "sops-edit"
         }
       ]
+    },
+    "configuration": {
+      "title": "SOPS Easy Edit",
+      "properties": {
+        "sops-edit.tempFilePreExtension": {
+          "type": "string",
+          "default": "tmp",
+          "description": "Pre-extension added to temporary decrypted files; example: test.enc.yaml => test.enc.tmp.yaml (default: 'tmp')"
+        }
+      }
     }
   },
   "scripts": {

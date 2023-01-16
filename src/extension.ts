@@ -8,6 +8,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	// this extension, and sops-encrypted files marked for direct editing
 	var excludedFiles : string[] = [];
 
+	// add listener to check for each document opened if it is a sops encrypted 
+	// file, and if so, close and open a decrypted copy instead
 	vscode.workspace.onDidOpenTextDocument(async (openDocument:vscode.TextDocument) => {
 		let encryptedFilePath = f.cleanPath(openDocument.fileName);
 
@@ -18,19 +20,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (isNotSopsEncrypted || isExcluded || isGitCopy ) {
 			return;
 		}
-		// close the just-opened original document
+
 		await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-
 		editDecryptedTmpCopy(encryptedFilePath,excludedFiles);
-
-		// // ask user what to do: edit directly, or edit decrypted copy?
-		// var answer = await vscode.window.showQuickPick([c.editDecryptedCopyString,c.editDirectlyString], { placeHolder: c.editQuestionString })
-		
-		// if (answer === c.editDirectlyString) {
-		// 	editDirectly(encryptedFilePath,excludedFiles);
-		// } else {
-		// 	editDecryptedTmpCopy(encryptedFilePath,excludedFiles);
-		// }
 	});
 
 	// allow direct edit by rmm button

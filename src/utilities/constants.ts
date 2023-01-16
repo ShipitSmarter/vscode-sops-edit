@@ -1,5 +1,6 @@
+import * as vscode from 'vscode';
 export const sopsYamlGlob = '**/*.sops.yaml';
-export const tempFilePreExtension = 'tmp';
+export const tempFilePreExtension = vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
 export const terminalEncryptName = 'sops (encrypt)';
 export const terminalDecryptName = 'sops (decrypt)';
 
