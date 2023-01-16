@@ -115,3 +115,18 @@ export async function callInInteractiveTerminal(command: string, terminal: vscod
 export async function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
+
+export async function fakeProgressUpdate(progressParameter:any, doneFlag:boolean[]) : Promise<void> {
+	// the 'done' flag must be passed as an array, because we need to keep the 
+	// reference to the original object (which is being updated externally)
+	var rem = 100;
+	while(!doneFlag[0]) {
+		await delay(1000);
+		let inc = Math.floor(rem/2.5);
+		rem -= inc;
+		if (inc > 1) {
+			progressParameter.report({ increment: inc});
+		}
+	}
+	return;
+}

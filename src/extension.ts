@@ -77,22 +77,13 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 		{location: vscode.ProgressLocation.Notification, cancellable: false, title: decryptionString}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
-			var done = false;
+			var done = [false];
 			f.callInInteractiveTerminal(f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName), decryptTerminal).then(_ => {
 				progress.report({ increment: 100 });
-				done = true;
+				done[0] = true;
 				return;
 			});
-			var rem = 100;
-			while(!done) {
-				await f.delay(1000);
-				let inc = Math.floor(rem/3);
-				rem -= inc;
-				if (inc > 1) {
-					progress.report({ increment: inc});
-				}
-			}
-			
+			await f.fakeProgressUpdate(progress,done);			
 		}
 	);	
 
