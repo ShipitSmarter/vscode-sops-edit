@@ -23,6 +23,10 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 	return terminal;
 }
 
+export function getParentUri(file:vscode.Uri) : vscode.Uri {
+	return vscode.Uri.joinPath(file,'..');
+}
+
 export function dissectUri(file:vscode.Uri) : PathDetails {
 	let fName = file.path.split('/').pop() ?? '';
 
@@ -74,6 +78,23 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 export async function openFile(file:vscode.Uri) : Promise<void> {
 	// vscode.commands.executeCommand('vscode.open',file.fsPath);
 	vscode.workspace.openTextDocument(file).then( doc => vscode.window.showTextDocument(doc));
+}
+
+export function openExistingOrNewTerminal(tempFile: vscode.Uri, name:string, terminals: TerminalExtension[]) : vscode.Terminal {
+	if (terminals.map(t => t.filePath).includes(tempFile.path)) {
+		return terminals[terminals.findIndex(t => t.filePath === tempFile.path)].terminal;
+	} else {
+		let terminal = vscode.window.createTerminal({name: name, cwd: getParentUri(tempFile).fsPath});
+		terminals.push({terminal:terminal, filePath:tempFile.path});
+		return terminal;
+	}
+}
+
+export function closeTerminalAndRemoveFromList(terminal:vscode.Terminal, tempFile:vscode.Uri,terminals:TerminalExtension[]) : void {
+	executeInTerminal(['exit'],terminal);
+	if (terminals.map(t => t.filePath).includes(tempFile.path)) {
+		terminals.splice(terminals.findIndex(t => t.filePath === tempFile.path),1);
+	}
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {

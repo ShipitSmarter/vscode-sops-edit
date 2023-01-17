@@ -66,14 +66,7 @@ async function editDecryptedTmpCopy(encryptedFile: vscode.Uri, excludedFilePaths
 
 	// prep terminals
 	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
-	var encryptTerminal: vscode.Terminal;
-	if (terminals.map(t => t.filePath).includes(tempFile.path)) {
-		encryptTerminal = terminals[terminals.findIndex(t => t.filePath === tempFile.path)].terminal;
-	} else {
-		encryptTerminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: parent.fsPath});
-		terminals.push({terminal:encryptTerminal, filePath:tempFile.path});
-	}
-	 
+	const encryptTerminal = f.openExistingOrNewTerminal(tempFile,c.terminalEncryptName,terminals);
 
 	// async decrypt with progress bar
 	await vscode.window.withProgress(
@@ -111,11 +104,10 @@ async function editDecryptedTmpCopy(encryptedFile: vscode.Uri, excludedFilePaths
 	vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
 		let closedFile = vscode.Uri.file(f.gitFix(e.fileName));
 		if (f.gitFix(closedFile.path) === tempFile.path) {
-			// close terminal, delete tmp file
-			f.executeInTerminal(['exit'],encryptTerminal);
-			if (terminals.map(t => t.filePath).includes(closedFile.path)) {
-				terminals.splice(terminals.findIndex(t => t.filePath === closedFile.path),1);
-			}
+			// close terminal
+			f.closeTerminalAndRemoveFromList(encryptTerminal,tempFile,terminals);
+
+			//delete tmp file
 			fs.unlinkSync(closedFile.fsPath);
 
 			// remove from excluded files
