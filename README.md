@@ -1,9 +1,5 @@
 # SOPS easy edit
 
-[![](https://vsmarketplacebadge.apphb.com/version-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
-[![](https://vsmarketplacebadge.apphb.com/installs-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
-[![](https://vsmarketplacebadge.apphb.com/rating-short/shipitsmarter.sops-edit.svg)](https://marketplace.visualstudio.com/items?itemName=shipitsmarter.sops-edit)
-
 ![SOPS edit use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_use_gif.gif)
 
 Once you have [SOPS](https://github.com/mozilla/sops) setup for your [GIT](https://git-scm.com/) project, it can be a pain in the behind trying to not forget decrypting SOPS encrypted files before editing, and encrypting them again before committing.
