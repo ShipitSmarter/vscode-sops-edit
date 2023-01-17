@@ -29,7 +29,7 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 	return {
 		fileName: fName,
 		parent: vscode.Uri.joinPath(file,'..'),
-		filePureName: fName.replace(c.getFilePureNameRegExp,''),
+		filePureName: fName.replace(c.getFileExtensionRegExp,''),
 		extension: fName.split('.').pop() ?? ''
 	};
 }
