@@ -5,30 +5,16 @@ import * as c from "./constants";
 
 export type PatternSet = [string, string[]];
 export type PathDetails = {
-	filePath:string, 
 	fileName:string, 
-	parentPath:string, 
+	parent:vscode.Uri, 
 	filePureName:string, 
 	extension:string
 };
 
-export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
-	// get paths to files in workspace that match a glob pattern
-	let functionsFiles = await vscode.workspace.findFiles(matchString);
-	let outFiles: string[] = [];
-	for (let index = 0; index < functionsFiles.length; index++) {
-		outFiles[index] = cleanPath(functionsFiles[index].fsPath);
-	}
-	return outFiles;
-}
-
-export function cleanPath (anyPath: string) : string {
-	return anyPath.replace(/\\/g, '/').replace('//','/');
-}
-
-export function parentPath (filePath: string) : string {
-	return filePath.replace(/\/[^\/]+$/,'');
-}
+export type TerminalExtension = {
+	terminal: vscode.Terminal,
+	filePath: string
+};
 
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
 	for (const psCommand of commandArray) {
@@ -37,21 +23,19 @@ export function executeInTerminal(commandArray:string[], terminal:vscode.Termina
 	return terminal;
 }
 
-export function dissectPath(filePath: string) : PathDetails {
-	let fPath = cleanPath(filePath);
-	let fName = fPath.split('/').pop() ?? '';
+export function dissectUri(file:vscode.Uri) : PathDetails {
+	let fName = file.path.split('/').pop() ?? '';
 
 	return {
-		filePath: fPath,
 		fileName: fName,
-		parentPath: parentPath(fPath),
-		filePureName: fName.replace(/\.[^\.]*$/,''),
+		parent: vscode.Uri.joinPath(file,'..'),
+		filePureName: fName.replace(c.getFilePureNameRegExp,''),
 		extension: fName.split('.').pop() ?? ''
 	};
 }
 
-export function copyEncrypt(parentPath:string, fileName:string, tempFileName:string, terminal: vscode.Terminal) : void {
-	fs.copyFileSync(`${parentPath}/${tempFileName}`,`${parentPath}/${fileName}`);
+export function copyEncrypt(parent:vscode.Uri, fileName:string, tempFileName:string, terminal: vscode.Terminal) : void {
+	fs.copyFileSync(`${parent.fsPath}/${tempFileName}`,`${parent.fsPath}/${fileName}`);
 	encrypt(fileName, tempFileName, terminal);
 }
 
@@ -63,14 +47,14 @@ export function replaceInCommand(command:string, fileName:string, tempFileName:s
 	return command.replace(c.fileString,fileName).replace(c.tempFileString,tempFileName);
 }
 
-export async function fileIsSopsEncrypted(filePath:string) : Promise<boolean> {
+export async function fileIsSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
-	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
+	var sopsFiles =  await vscode.workspace.findFiles(c.sopsYamlGlob);
 	for (const sf of sopsFiles) {
 		var pr: PatternSet = getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
-			if (new RegExp(`${pr[0]}/.*${re}`).test(filePath)) {
+			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
 				return true;
 			}
 		}
@@ -78,20 +62,18 @@ export async function fileIsSopsEncrypted(filePath:string) : Promise<boolean> {
 	return false;
 }
 
-export function getSopsPatternsFromFile(sopsFilePath:string) : PatternSet {
+export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	// open .sops.yaml file, extract path_regex patterns,
 	// combine with file location to return a PatternSet
-	let sopsFile: PathDetails = dissectPath(sopsFilePath);
-	let contentString: string = fs.readFileSync(sopsFilePath,'utf-8');
+	let contentString: string = fs.readFileSync(sopsFile.fsPath,'utf-8');
 	let content = yaml.parse(contentString);
 	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
-	return [sopsFile.parentPath, fileRegexes];
+	return [vscode.Uri.joinPath(sopsFile,'..').path, fileRegexes];
 }
 
-export async function openFile(filePath:string) : Promise<void> {
-	let openPath = vscode.Uri.file(filePath);
-	// vscode.commands.executeCommand('vscode.open',openPath);
-	vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
+export async function openFile(file:vscode.Uri) : Promise<void> {
+	// vscode.commands.executeCommand('vscode.open',file.fsPath);
+	vscode.workspace.openTextDocument(file).then( doc => vscode.window.showTextDocument(doc));
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
@@ -113,6 +95,16 @@ export async function callInInteractiveTerminal(command: string, terminal: vscod
 			}
 		);
 	});
+}
+
+export function gitFix(path:string) : string {
+	return path.replace(c.gitExtensionRegExp,'');
+}
+
+export function removeElementFromArray(array:any[], element:any) : void {
+	if (array.includes(element)) {
+		array.splice(array.indexOf(element),1);
+	}
 }
 
 export async function delay(ms: number) {

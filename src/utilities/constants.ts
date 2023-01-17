@@ -14,3 +14,7 @@ export const decryptionString = 'Decrypting [FILE] ...';
 export const editQuestionString = 'What would you like to do with this SOPS-encrypted file?';
 export const editDirectlyString = 'Edit encrypted file directly';
 export const editDecryptedCopyString = 'Edit decrypted version';
+
+// unavoidable regexes
+export const gitExtensionRegExp = /\.git$/;
+export const getFilePureNameRegExp = /\.[^\.]*$/;

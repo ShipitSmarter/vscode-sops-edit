@@ -2,81 +2,87 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as f from './utilities/functions';
 import * as c from './utilities/constants';
-import { deflateSync } from 'zlib';
 
 export async function activate(context: vscode.ExtensionContext) {
 	// initialize list of excluded files, which are TMP files created by 
 	// this extension, and sops-encrypted files marked for direct editing
-	var excludedFiles : string[] = [];
+	var excludedFilePaths : string[] = [];
+
+	// keep track of opened terminals (this is necessary because of file GIT copies, 
+	// to avoid opening two terminals for one file)
+	var terminals: f.TerminalExtension[] = [];
 
 	// add listener to check for each document opened if it is a sops encrypted 
 	// file, and if so, close and open a decrypted copy instead
 	vscode.workspace.onDidOpenTextDocument(async (openDocument:vscode.TextDocument) => {
-		let encryptedFilePath = f.cleanPath(openDocument.fileName);
+		let encryptedFile = vscode.Uri.file(f.gitFix(openDocument.fileName));
 
 		// only apply if this is a non-excluded sops encrypted file (and not a .git copy)
-		let isNotSopsEncrypted: boolean = !(await f.fileIsSopsEncrypted(encryptedFilePath));
-		let isExcluded: boolean = excludedFiles.includes(encryptedFilePath);
-		let isGitCopy = /\.git$/.test(encryptedFilePath);
-		if (isNotSopsEncrypted || isExcluded || isGitCopy ) {
+		let isNotSopsEncrypted: boolean = !(await f.fileIsSopsEncrypted(encryptedFile));
+		let isExcluded: boolean = excludedFilePaths.includes(encryptedFile.path);
+		// let isGitCopy = c.gitExtensionRegExp.test(encryptedFile.path);
+		if (isNotSopsEncrypted || isExcluded ) {
 			return;
 		}
 
 		await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
-		await editDecryptedTmpCopy(encryptedFilePath,excludedFiles);
+		await editDecryptedTmpCopy(encryptedFile,excludedFilePaths, terminals);
 	});
 
 	// allow direct edit by rmm button
 	let disposable = vscode.commands.registerCommand('sops-edit.direct-edit', (_, files) => {
 		if (files.length === 0) {
 			vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
-			return;
 		}
-		editDirectly(files[0].fsPath, excludedFiles);
+		editDirectly(files[0], excludedFilePaths);
 	});
 	context.subscriptions.push(disposable);
 }
 
-function editDirectly(filePath:string, excludedFiles: string[]) : void {
-		var directEditFile: f.PathDetails = f.dissectPath(filePath);
-
+function editDirectly(directEditFile:vscode.Uri, excludedFilePaths: string[]) : void {
 		// add to excluded files
-		excludedFiles.push(directEditFile.filePath);
+		excludedFilePaths.push(directEditFile.path);
 
 		// add listener to remove from excluded files when closed
 		vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-			let closedFile: f.PathDetails = f.dissectPath(e.fileName);
-			let isClosedDocumentThisDocument = closedFile.filePath === directEditFile.filePath && excludedFiles.includes(closedFile.filePath);
-			if (isClosedDocumentThisDocument) {
-				excludedFiles.splice(excludedFiles.indexOf(closedFile.filePath),1);
+			let closedFile = vscode.Uri.file(f.gitFix(e.fileName));
+			if (closedFile.path === directEditFile.path) {
+				f.removeElementFromArray(excludedFilePaths,closedFile.path);
 			}
 		});
 
 		// open
-		f.openFile(directEditFile.filePath);
+		f.openFile(directEditFile);
 }
 
-async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:string[]) : Promise<void> {
-	// prep
-	var enc: f.PathDetails = f.dissectPath(encryptedFilePath);
-	var [parentPath, encryptedFileName] = [enc.parentPath, enc.fileName ];
+async function editDecryptedTmpCopy(encryptedFile: vscode.Uri, excludedFilePaths:string[], terminals: f.TerminalExtension[]) : Promise<void> {
+	// construct temp file uri
+	let enc = f.dissectUri(encryptedFile);
+	let parent = enc.parent;
 	var tempFileName = `${enc.filePureName}.${c.tempFilePreExtension}.${enc.extension}`;
-	var tempFilePath = `${parentPath}/${tempFileName}`;
+	var tempFile : vscode.Uri = vscode.Uri.joinPath(parent,tempFileName);
 	
 	// add tmp file to excluded files
-	excludedFiles.push(tempFilePath);
+	excludedFilePaths.push(tempFile.path);
 
 	// prep terminals
-	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parentPath});
-	const encryptTerminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: parentPath});
+	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
+	var encryptTerminal: vscode.Terminal;
+	if (terminals.map(t => t.filePath).includes(tempFile.path)) {
+		encryptTerminal = terminals[terminals.findIndex(t => t.filePath === tempFile.path)].terminal;
+	} else {
+		encryptTerminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: parent.fsPath});
+		terminals.push({terminal:encryptTerminal, filePath:tempFile.path});
+	}
+	 
 
-	// async decrypt with progress
+	// async decrypt with progress bar
 	await vscode.window.withProgress(
-		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, encryptedFileName)}, 
+		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, enc.fileName)}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
 			var progressDetails = { isDone: false };
-			var decryptCommand = f.replaceInCommand(c.decryptionCommand,encryptedFileName,tempFileName);
+			var decryptCommand = f.replaceInCommand(c.decryptionCommand,enc.fileName,tempFileName);
 			f.callInInteractiveTerminal(decryptCommand, decryptTerminal).then(_ => {
 				progress.report({ increment: 100 });
 				progressDetails.isDone = true;
@@ -87,33 +93,34 @@ async function editDecryptedTmpCopy(encryptedFilePath:string, excludedFiles:stri
 	);	
 
 	// get decrypted string in order to later be able to detect changes
-	var currentDecryptedText = fs.readFileSync(tempFilePath, 'utf-8').trim();
-	f.openFile(tempFilePath);
+	var currentDecryptedText = fs.readFileSync(tempFile.fsPath, 'utf-8').trim();
+	f.openFile(tempFile);
 
 	// add listener to save and encrypt when tmp file is updated
 	vscode.workspace.onDidSaveTextDocument((e:vscode.TextDocument) => {
-		let savedFile: f.PathDetails = f.dissectPath(e.fileName);
-		if (savedFile.filePath === tempFilePath) {
+		let savedFile = vscode.Uri.file(e.fileName);
+		if (savedFile.path === tempFile.path) {
 			let contents = e.getText().trim();
 			if (contents !== currentDecryptedText) {
 				currentDecryptedText = contents;
-				f.copyEncrypt(parentPath, encryptedFileName, tempFileName, encryptTerminal);
+				f.copyEncrypt(parent, enc.fileName, tempFileName, encryptTerminal);
 			}
 		}
 	});
 
 	// add listener to delete tmp file when closed
 	vscode.workspace.onDidCloseTextDocument((e:vscode.TextDocument) => {
-		let closedFile: f.PathDetails = f.dissectPath(e.fileName);
-		if (closedFile.filePath === tempFilePath) {
+		let closedFile = vscode.Uri.file(f.gitFix(e.fileName));
+		if (f.gitFix(closedFile.path) === tempFile.path) {
 			// close terminal, delete tmp file
 			f.executeInTerminal(['exit'],encryptTerminal);
-			fs.unlinkSync(closedFile.filePath);
+			if (terminals.map(t => t.filePath).includes(closedFile.path)) {
+				terminals.splice(terminals.findIndex(t => t.filePath === closedFile.path),1);
+			}
+			fs.unlinkSync(closedFile.fsPath);
 
 			// remove from excluded files
-			if (excludedFiles.includes(closedFile.filePath)) {
-				excludedFiles.splice(excludedFiles.indexOf(closedFile.filePath),1);
-			}
+			f.removeElementFromArray(excludedFilePaths,closedFile.path);
 		}
 	}); 
 }
