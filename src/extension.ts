@@ -20,7 +20,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		// only apply if this is a non-excluded sops encrypted file (and not a .git copy)
 		let isNotSopsEncrypted: boolean = !(await f.fileIsSopsEncrypted(encryptedFile));
 		let isExcluded: boolean = excludedFilePaths.includes(encryptedFile.path);
-		// let isGitCopy = c.gitExtensionRegExp.test(encryptedFile.path);
 		if (isNotSopsEncrypted || isExcluded ) {
 			return;
 		}
