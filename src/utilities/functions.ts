@@ -90,7 +90,8 @@ export function getSopsPatternsFromFile(sopsFilePath:string) : PatternSet {
 
 export async function openFile(filePath:string) : Promise<void> {
 	let openPath = vscode.Uri.file(filePath);
-	vscode.commands.executeCommand('vscode.open',openPath);
+	// vscode.commands.executeCommand('vscode.open',openPath);
+	vscode.workspace.openTextDocument(openPath).then( doc => vscode.window.showTextDocument(doc));
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
