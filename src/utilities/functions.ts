@@ -11,11 +11,10 @@ export type PathDetails = {
 	extension:string
 };
 
-export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
+export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal)  {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
 	}
-	return terminal;
 }
 
 export function getParentUri(file:vscode.Uri) : vscode.Uri {
@@ -131,7 +130,10 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri,tempFile:v
 export function copyEncrypt(tempFile:vscode.Uri, terminal: vscode.Terminal) : void {
 	let unTempFile = getUnTempUri(tempFile);
 	fs.copyFileSync(tempFile.fsPath,unTempFile.fsPath);
-	executeInTerminal([c.encryptionCommand.replace(c.fileString, getFileName(unTempFile))], terminal);
+	executeInTerminal([
+		`cd ${getParentUri(unTempFile).fsPath}`,
+		c.encryptionCommand.replace(c.fileString, getFileName(unTempFile))
+	], terminal);
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {

@@ -5,7 +5,6 @@ import * as f from "./functions";
 
 type ExtendedTempFile = {
 	filePath: string,
-	terminal: vscode.Terminal,
 	content: string
 };
 
@@ -13,17 +12,20 @@ export class FilePool {
     // pool of excluded file paths, existing of:
     //   - TMP files created by this extension
     //   - SOPS-encrypted files marked for direct editing
-    public excludedFilePaths: string[];
+    private _excludedFilePaths: string[];
     
     // pool of open TMP file details, each item containing:
 	//  - temp file path
 	//  - temp file content (to track file changes)
 	//  - encryption terminal
-    public tempFiles: ExtendedTempFile[];
+    private _tempFiles: ExtendedTempFile[];
+
+    private _encryptionTerminal: vscode.Terminal|undefined;
 
     public constructor() {
-        this.excludedFilePaths = [];
-        this.tempFiles = [];
+        this._excludedFilePaths = [];
+        this._tempFiles = [];
+        this._encryptionTerminal = undefined;
     }
 
     public async openTextDocumentListener(textDocument:vscode.TextDocument) : Promise<void> {
@@ -32,7 +34,7 @@ export class FilePool {
     
         // only apply if this is a non-excluded sops encrypted file
         let isSopsEncrypted: boolean = await f.isSopsEncrypted(encryptedFile);
-        let isExcluded: boolean = this.excludedFilePaths.includes(encryptedFile.path);
+        let isExcluded: boolean = this._excludedFilePaths.includes(encryptedFile.path);
         if (!isSopsEncrypted || isExcluded ) {
             return;
         }
@@ -64,7 +66,7 @@ export class FilePool {
         } else {
             // add to excluded files and open
             let directEditFile = files[0];
-            this.excludedFilePaths.push(directEditFile.path);
+            this._excludedFilePaths.push(directEditFile.path);
             f.openFile(directEditFile);
         }
     }
@@ -78,11 +80,11 @@ export class FilePool {
         }
 
         this._addTempFilesEntry(tempFile);
-        this.excludedFilePaths.push(tempFile.path);
+        this._excludedFilePaths.push(tempFile.path);
         await f.decryptWithProgressBar(encryptedFile, tempFile);
 
         // update tempFiles entry with file content
-        this.tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath,'utf-8');
+        this._tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath,'utf-8');
 
         await f.openFile(tempFile);
     }
@@ -93,12 +95,15 @@ export class FilePool {
             return;
         }
 
-        let terminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: f.getParentUri(tempFile).fsPath});
-        this.tempFiles.push({
-            terminal:terminal, 
+        this._tempFiles.push({
             filePath:tempFile.path, 
             content: ''
         });
+
+        // open terminal if first tmp file is opened
+        if (!this._encryptionTerminal) {
+            this._encryptionTerminal = vscode.window.createTerminal(c.terminalEncryptName);
+        }
     }
 
     private _removeTempFilesEntryAndDelete(tempFile:vscode.Uri) : void {
@@ -107,27 +112,31 @@ export class FilePool {
             return;
         }
 
-        let terminal = this.tempFiles[index].terminal;
-        f.executeInTerminal(['exit'],terminal);
-        this.tempFiles.splice(index,1);
+        this._tempFiles.splice(index,1);
         fs.unlinkSync(tempFile.fsPath);
+
+        // exit terminal if the last tmp file was closed
+        if (this._tempFiles.length === 0) {
+            f.executeInTerminal(['exit'],this._encryptionTerminal!);
+            this._encryptionTerminal = undefined;
+        }
     }
 
     private _removeExcludedPathsEntry(path:string) {
-        if (this.excludedFilePaths.includes(path)) {
-            this.excludedFilePaths.splice(this.excludedFilePaths.indexOf(path),1);
+        if (this._excludedFilePaths.includes(path)) {
+            this._excludedFilePaths.splice(this._excludedFilePaths.indexOf(path),1);
         }
     }
 
     private _copyEncryptSaveContentsIfTempFile(tempFile:vscode.Uri, tempFileContent: string) : void {
         let index = this._getTempFileIndex(tempFile);
-        if (index !== -1 && this.tempFiles[index].content !== tempFileContent) {
-            this.tempFiles[index].content = tempFileContent;
-            f.copyEncrypt(tempFile,this.tempFiles[index].terminal);
+        if (index !== -1 && this._tempFiles[index].content !== tempFileContent) {
+            this._tempFiles[index].content = tempFileContent;
+            f.copyEncrypt(tempFile,this._encryptionTerminal!);
         }
     }
 
     private _getTempFileIndex(tempFile:vscode.Uri) : number {
-        return this.tempFiles.findIndex(t => t.filePath === tempFile.path);
+        return this._tempFiles.findIndex(t => t.filePath === tempFile.path);
     }
 }
