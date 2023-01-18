@@ -43,31 +43,29 @@ export class FilePool {
     }
     
     public closeTextDocumentListener(textDocument:vscode.TextDocument) : void {
-        // on close document: 
         // 	- remove document from excluded files (if present)
-        // 	- if it is a tmp version of SOPS encrypted file: remove entry, close terminal, delete
+        // 	- if it is a tmp version of SOPS encrypted file: remove tempFiles entry, delete
         const closedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
         this._removeExcludedPathsEntry(closedFile.path);
         this._removeTempFilesEntryAndDelete(closedFile);
     }
     
     public saveTextDocumentListener(textDocument:vscode.TextDocument) : void {
-        // on save document: save and encrypt when it is a tmp file
+        // save and encrypt when it is a tmp file
         const savedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
         const content = textDocument.getText().trim();
         this._copyEncryptSaveContentsIfTempFile(savedFile, content);
     }
 
     public editDirectly(files:vscode.Uri[]) : void {
-        // show error message if no files selected
         if (files.length === 0) {
             void vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
-        } else {
-            // add to excluded files and open
-            const directEditFile = files[0];
-            this._excludedFilePaths.push(directEditFile.path);
-            void f.openFile(directEditFile);
-        }
+            return;
+        } 
+        
+        const directEditFile = files[0];
+        this._excludedFilePaths.push(directEditFile.path);
+        void f.openFile(directEditFile);
     }
 
     private async _editDecryptedTmpCopy(encryptedFile: vscode.Uri) : Promise<void> {

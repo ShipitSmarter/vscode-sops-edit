@@ -66,7 +66,6 @@ export function getFileName(file:vscode.Uri): string {
 }
 
 export async function openFile(file:vscode.Uri) : Promise<void> {
-	// vscode.commands.executeCommand('vscode.open',file.fsPath);
 	await vscode.workspace.openTextDocument(file).then( doc => vscode.window.showTextDocument(doc));
 }
 
