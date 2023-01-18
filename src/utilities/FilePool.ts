@@ -39,7 +39,6 @@ export class FilePool {
             return;
         }
     
-        await f.closeTextDocument();
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     
@@ -79,6 +78,7 @@ export class FilePool {
             return;
         }
 
+        await f.closeTextDocument();
         this._addTempFilesEntry(tempFile);
         this._excludedFilePaths.push(tempFile.path);
         await f.decryptWithProgressBar(encryptedFile, tempFile);
