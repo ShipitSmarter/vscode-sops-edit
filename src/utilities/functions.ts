@@ -32,7 +32,7 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 
 	return {
 		fileName: fName,
-		parent: vscode.Uri.joinPath(file,'..'),
+		parent: getParentUri(file,),
 		filePureName: fName.replace(c.getFileExtensionRegExp,''),
 		extension: fName.split('.').pop() ?? ''
 	};
@@ -72,7 +72,7 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	let contentString: string = fs.readFileSync(sopsFile.fsPath,'utf-8');
 	let content = yaml.parse(contentString);
 	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
-	return [vscode.Uri.joinPath(sopsFile,'..').path, fileRegexes];
+	return [getParentUri(sopsFile).path, fileRegexes];
 }
 
 export async function openFile(file:vscode.Uri) : Promise<void> {
