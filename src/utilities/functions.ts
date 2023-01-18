@@ -46,7 +46,7 @@ export function getTempFileName(file:vscode.Uri) : string {
 	return `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
 }
 
-export function getUnTempFileName(tempFile:vscode.Uri): string {
+export function getOriginalFromTempFileName(tempFile:vscode.Uri): string {
 	const tfd = dissectUri(tempFile);
 	return `${tfd.filePureName.replace(getTempFilePreExtensionRegExp(), '')}.${tfd.extension}`;
 }
@@ -56,9 +56,9 @@ export function getTempUri(file:vscode.Uri) : vscode.Uri {
 	return vscode.Uri.joinPath(fd.parent, getTempFileName(file));
 }
 
-export function getUnTempUri(tempFile:vscode.Uri) : vscode.Uri {
+export function getOriginalFromTempUri(tempFile:vscode.Uri) : vscode.Uri {
 	const tfd = dissectUri(tempFile);
-	return vscode.Uri.joinPath(tfd.parent, getUnTempFileName(tempFile));
+	return vscode.Uri.joinPath(tfd.parent, getOriginalFromTempFileName(tempFile));
 }
 
 export function getFileName(file:vscode.Uri): string {
@@ -137,7 +137,7 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 }
 
 export function copyEncrypt(tempFile:vscode.Uri, terminal: vscode.Terminal) : void {
-	const unTempFile = getUnTempUri(tempFile);
+	const unTempFile = getOriginalFromTempUri(tempFile);
 	fs.copyFileSync(tempFile.fsPath, unTempFile.fsPath);
 	executeInTerminal([
 		`cd ${getParentUri(unTempFile).fsPath}`,
