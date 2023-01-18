@@ -18,3 +18,4 @@ export const editDecryptedCopyString = 'Edit decrypted version';
 // unavoidable regexes
 export const gitExtensionRegExp = /\.git$/;
 export const getFileExtensionRegExp = /\.[^\.]*$/;
+export const tempPreExtensionRegExp = new RegExp(`\.${tempFilePreExtension}$`);
