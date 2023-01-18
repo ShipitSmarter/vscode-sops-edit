@@ -47,18 +47,10 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 	};
 }
 
-export function getTempFileName(file:vscode.Uri) : string {
-	const fd = dissectUri(file);
-	return `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
-}
-
 export function getTempUri(file:vscode.Uri) : vscode.Uri {
 	const fd = dissectUri(file);
-	return vscode.Uri.joinPath(fd.parent, getTempFileName(file));
-}
-
-export function getFileName(file:vscode.Uri): string {
-	return dissectUri(file).fileName;
+	const tempFileName = `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
+	return vscode.Uri.joinPath(fd.parent, tempFileName);
 }
 
 export async function openFile(file:vscode.Uri) : Promise<void> {
@@ -134,10 +126,11 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 
 export function copyEncrypt(extendedTempFile:ExtendedTempFile, terminal: vscode.Terminal) : void {
 	fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
+	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
 	executeInTerminal([
-		`cd ${getParentUri(extendedTempFile.originalFile).fsPath}`,
-		c.encryptionCommand.replace(c.fileString, getFileName(extendedTempFile.originalFile))
-	], terminal);
+			`cd ${getParentUri(extendedTempFile.originalFile).fsPath}`,
+			c.encryptionCommand.replace(c.fileString, originalFileName)
+		], terminal);
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
@@ -156,8 +149,7 @@ export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
 }
 
 export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
-	// open .sops.yaml file, extract path_regex patterns,
-	// combine with file location to return a PatternSet
+	// open .sops.yaml file, extract path_regex patterns, combine with file location to return a PatternSet
 	const contentString: string = fs.readFileSync(sopsFile.fsPath, 'utf-8');
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 	const content = yaml.parse(contentString);
@@ -169,9 +161,4 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 
 export function getTempFilePreExtension() : string {
 	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
-}
-
-export function getTempFilePreExtensionRegExp() : RegExp {
-	// eslint-disable-next-line no-useless-escape
-	return new RegExp(`\.${getTempFilePreExtension()}$`);
 }
