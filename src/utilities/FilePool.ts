@@ -30,7 +30,7 @@ export class FilePool {
         // on open document: if it is a sops encrypted file: close and open a decrypted copy instead
         let encryptedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
     
-        // only apply if this is a non-excluded sops encrypted file (and not a .git copy)
+        // only apply if this is a non-excluded sops encrypted file
         let isSopsEncrypted: boolean = await f.isSopsEncrypted(encryptedFile);
         let isExcluded: boolean = this.excludedFilePaths.includes(encryptedFile.path);
         if (!isSopsEncrypted || isExcluded ) {
