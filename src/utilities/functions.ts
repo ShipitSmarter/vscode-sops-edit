@@ -159,7 +159,7 @@ export function removeTempFilesEntryAndDelete(tempFiles:TempFileExtension[], tem
 
 export function copyEncryptSaveContentsIfTempFile(tempFiles:TempFileExtension[], tempFile:vscode.Uri, tempFileContent: string) : void {
 	let index = tempFiles.findIndex(t => t.filePath === tempFile.path);
-	if (index !== -1) {
+	if (index !== -1 && tempFiles[index].content !== tempFileContent) {
 		tempFiles[index].content = tempFileContent;
 		copyEncrypt(tempFile,tempFiles[index].terminal);
 	}
