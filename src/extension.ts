@@ -11,5 +11,3 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.commands.registerCommand('sops-edit.direct-edit', (_, files:vscode.Uri[]) => filePool.editDirectly(files))
 	);
 }
-
-export function deactivate() {}
