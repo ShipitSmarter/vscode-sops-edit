@@ -73,7 +73,7 @@ export async function callInInteractiveTerminal(command: string, terminal: vscod
 	terminal.sendText("; exit");
 	return new Promise((resolve, reject) => {
 		const disposeToken = vscode.window.onDidCloseTerminal(
-			async (closedTerminal) => {
+			(closedTerminal) => {
 			if (closedTerminal === terminal) {
 				disposeToken.dispose();
 				if (terminal.exitStatus !== undefined) {

@@ -43,7 +43,7 @@ export class FilePool {
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     
-    public async closeTextDocumentListener(textDocument:vscode.TextDocument) : Promise<void> {
+    public closeTextDocumentListener(textDocument:vscode.TextDocument) : void {
         // on close document: 
         // 	- remove document from excluded files (if present)
         // 	- if it is a tmp version of SOPS encrypted file: remove entry, close terminal, delete
@@ -52,7 +52,7 @@ export class FilePool {
         this._removeTempFilesEntryAndDelete(closedFile);
     }
     
-    public async saveTextDocumentListener(textDocument:vscode.TextDocument) : Promise<void> {
+    public saveTextDocumentListener(textDocument:vscode.TextDocument) : void {
         // on save document: save and encrypt when it is a tmp file
         const savedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
         const content = textDocument.getText().trim();

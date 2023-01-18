@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { FilePool } from './utilities/FilePool';
 
-export async function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
 	const filePool = new FilePool();
 
 	context.subscriptions.push(
