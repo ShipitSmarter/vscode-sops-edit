@@ -15,6 +15,12 @@ type Progress = vscode.Progress<{
     increment?: number | undefined;
 }>;
 
+type ExtendedTempFile = {
+	tempFile: vscode.Uri,
+    originalFile: vscode.Uri,
+	content: string
+};
+
 export async function closeTextDocument() : Promise<void> {
 	// original closeTextDocument is deprecated.
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
@@ -46,19 +52,9 @@ export function getTempFileName(file:vscode.Uri) : string {
 	return `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
 }
 
-export function getOriginalFromTempFileName(tempFile:vscode.Uri): string {
-	const tfd = dissectUri(tempFile);
-	return `${tfd.filePureName.replace(getTempFilePreExtensionRegExp(), '')}.${tfd.extension}`;
-}
-
 export function getTempUri(file:vscode.Uri) : vscode.Uri {
 	const fd = dissectUri(file);
 	return vscode.Uri.joinPath(fd.parent, getTempFileName(file));
-}
-
-export function getOriginalFromTempUri(tempFile:vscode.Uri) : vscode.Uri {
-	const tfd = dissectUri(tempFile);
-	return vscode.Uri.joinPath(tfd.parent, getOriginalFromTempFileName(tempFile));
 }
 
 export function getFileName(file:vscode.Uri): string {
@@ -136,12 +132,11 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 	return;
 }
 
-export function copyEncrypt(tempFile:vscode.Uri, terminal: vscode.Terminal) : void {
-	const unTempFile = getOriginalFromTempUri(tempFile);
-	fs.copyFileSync(tempFile.fsPath, unTempFile.fsPath);
+export function copyEncrypt(extendedTempFile:ExtendedTempFile, terminal: vscode.Terminal) : void {
+	fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
 	executeInTerminal([
-		`cd ${getParentUri(unTempFile).fsPath}`,
-		c.encryptionCommand.replace(c.fileString, getFileName(unTempFile))
+		`cd ${getParentUri(extendedTempFile.originalFile).fsPath}`,
+		c.encryptionCommand.replace(c.fileString, getFileName(extendedTempFile.originalFile))
 	], terminal);
 }
 

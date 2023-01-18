@@ -4,7 +4,8 @@ import * as c from "./constants";
 import * as f from "./functions";
 
 type ExtendedTempFile = {
-	filePath: string,
+	tempFile: vscode.Uri,
+    originalFile: vscode.Uri,
 	content: string
 };
 
@@ -77,7 +78,7 @@ export class FilePool {
         }
 
         await f.closeTextDocument();
-        this._addTempFilesEntry(tempFile);
+        this._addTempFilesEntry(tempFile, encryptedFile);
         this._excludedFilePaths.push(tempFile.path);
         await f.decryptWithProgressBar(encryptedFile, tempFile);
 
@@ -87,14 +88,15 @@ export class FilePool {
         await f.openFile(tempFile);
     }
 
-    private _addTempFilesEntry(tempFile: vscode.Uri) : void {
+    private _addTempFilesEntry(tempFile: vscode.Uri, encryptedFile:vscode.Uri) : void {
         const index = this._getTempFileIndex(tempFile);
         if (index !== -1) {
             return;
         }
 
         this._tempFiles.push({
-            filePath:tempFile.path, 
+            tempFile:tempFile, 
+            originalFile: encryptedFile,
             content: ''
         });
 
@@ -130,11 +132,11 @@ export class FilePool {
         const index = this._getTempFileIndex(tempFile);
         if (index !== -1 && this._tempFiles[index].content !== tempFileContent && this._encryptionTerminal) {
             this._tempFiles[index].content = tempFileContent;
-            f.copyEncrypt(tempFile, this._encryptionTerminal);
+            f.copyEncrypt(this._tempFiles[index], this._encryptionTerminal);
         }
     }
 
     private _getTempFileIndex(tempFile:vscode.Uri) : number {
-        return this._tempFiles.findIndex(t => t.filePath === tempFile.path);
+        return this._tempFiles.findIndex(t => t.tempFile.path === tempFile.path);
     }
 }
