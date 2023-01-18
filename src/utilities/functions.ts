@@ -17,8 +17,6 @@ type Progress = vscode.Progress<{
 
 export async function closeTextDocument() : Promise<void> {
 	// original closeTextDocument is deprecated.
-	// from https://stackoverflow.com/a/54767938/1716283
-	//await vscode.window.showTextDocument(textDocument, {preview: true, preserveFocus: false});
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
 }
 
