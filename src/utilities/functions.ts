@@ -14,7 +14,6 @@ type Progress = vscode.Progress<{
     message?: string | undefined;
     increment?: number | undefined;
 }>;
-
 type ExtendedTempFile = {
 	tempFile: vscode.Uri,
     originalFile: vscode.Uri,
@@ -41,7 +40,7 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 
 	return {
 		fileName: fName,
-		parent: getParentUri(file,),
+		parent: getParentUri(file),
 		filePureName: fName.replace(c.getFileExtensionRegExp, ''),
 		extension: fName.split('.').pop() ?? ''
 	};
