@@ -39,7 +39,7 @@ export class FilePool {
             return;
         }
     
-        await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+        await f.closeTextDocument();
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     

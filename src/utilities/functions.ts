@@ -15,6 +15,13 @@ type Progress = vscode.Progress<{
     increment?: number | undefined;
 }>;
 
+export async function closeTextDocument() : Promise<void> {
+	// original closeTextDocument is deprecated.
+	// from https://stackoverflow.com/a/54767938/1716283
+	//await vscode.window.showTextDocument(textDocument, {preview: true, preserveFocus: false});
+    await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+}
+
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal)  {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
@@ -128,7 +135,8 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 			});
 			await fakeProgressUpdate(progress, progressDetails);			
 		}
-	);	
+	);
+	return;
 }
 
 export function copyEncrypt(tempFile:vscode.Uri, terminal: vscode.Terminal) : void {
