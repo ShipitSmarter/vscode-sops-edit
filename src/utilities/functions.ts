@@ -11,7 +11,7 @@ export type PathDetails = {
 	extension:string
 };
 
-export type TempFileExtension = {
+export type ExtendedTempFile = {
 	filePath: string,
 	terminal: vscode.Terminal,
 	content: string
@@ -59,11 +59,6 @@ export function getUnTempUri(tempFile:vscode.Uri) : vscode.Uri {
 	return vscode.Uri.joinPath(tfd.parent, getUnTempFileName(tempFile));
 }
 
-export function hasTempPreExtension(file:vscode.Uri) : boolean {
-	let fd = dissectUri(file);
-	return c.tempPreExtensionRegExp.test(fd.filePureName);
-}
-
 export function getFileName(file:vscode.Uri): string {
 	return dissectUri(file).fileName;
 }
@@ -90,7 +85,7 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri,tempFile:v
 		async (progress) => {
 			progress.report({  increment: 0 });
 			var progressDetails = { isDone: false };
-			var decryptCommand = replaceInCommand(c.decryptionCommand,enc.fileName,temp.fileName);
+			var decryptCommand = c.decryptionCommand.replace(c.fileString,enc.fileName).replace(c.tempFileString,temp.fileName);;
 			callInInteractiveTerminal(decryptCommand, decryptTerminal).then(_ => {
 				progress.report({ increment: 100 });
 				progressDetails.isDone = true;
@@ -99,10 +94,6 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri,tempFile:v
 			await fakeProgressUpdate(progress, progressDetails);			
 		}
 	);	
-}
-
-export function replaceInCommand(command:string, fileName:string, tempFileName:string) : string {
-	return command.replace(c.fileString,fileName).replace(c.tempFileString,tempFileName);
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
@@ -134,21 +125,20 @@ export async function openFile(file:vscode.Uri) : Promise<void> {
 	vscode.workspace.openTextDocument(file).then( doc => vscode.window.showTextDocument(doc));
 }
 
-export function addTempFilesEntry(tempFiles: TempFileExtension[], tempFile: vscode.Uri) : void {
-	let index = tempFiles.findIndex(t => t.filePath === tempFile.path);
+export function addTempFilesEntry(tempFiles: ExtendedTempFile[], tempFile: vscode.Uri) : void {
+	let index = getTempFileIndex(tempFiles,tempFile);
 	if (index === -1) {
 		let terminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: getParentUri(tempFile).fsPath});
-		let content = fs.readFileSync(tempFile.fsPath,'utf-8');
 		tempFiles.push({
 			terminal:terminal, 
 			filePath:tempFile.path, 
-			content: content
+			content: ''
 		});
 	}
 }
 
-export function removeTempFilesEntryAndDelete(tempFiles:TempFileExtension[], tempFile:vscode.Uri) : void {
-	let index = tempFiles.findIndex(t => t.filePath === tempFile.path);
+export function removeTempFilesEntryAndDelete(tempFiles:ExtendedTempFile[], tempFile:vscode.Uri) : void {
+	let index = getTempFileIndex(tempFiles,tempFile);
 	if (index !== -1) {
 		let terminal = tempFiles[index].terminal;
 		executeInTerminal(['exit'],terminal);
@@ -157,12 +147,16 @@ export function removeTempFilesEntryAndDelete(tempFiles:TempFileExtension[], tem
 	}
 }
 
-export function copyEncryptSaveContentsIfTempFile(tempFiles:TempFileExtension[], tempFile:vscode.Uri, tempFileContent: string) : void {
-	let index = tempFiles.findIndex(t => t.filePath === tempFile.path);
+export function copyEncryptSaveContentsIfTempFile(tempFiles:ExtendedTempFile[], tempFile:vscode.Uri, tempFileContent: string) : void {
+	let index = getTempFileIndex(tempFiles,tempFile);
 	if (index !== -1 && tempFiles[index].content !== tempFileContent) {
 		tempFiles[index].content = tempFileContent;
 		copyEncrypt(tempFile,tempFiles[index].terminal);
 	}
+}
+
+export function getTempFileIndex(tempFiles:ExtendedTempFile[],tempFile:vscode.Uri) : number {
+	return tempFiles.findIndex(t => t.filePath === tempFile.path);
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
@@ -212,4 +206,70 @@ export async function fakeProgressUpdate(progressParameter:any, progress: { isDo
 		}
 	}
 	return;
+}
+
+export function editDirectly(files:vscode.Uri[], excludedFilePaths: string[]) : void {
+	// show error message if no files selected
+	if (files.length === 0) {
+		vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
+	} else {
+		// add to excluded files and open
+		let directEditFile = files[0];
+		excludedFilePaths.push(directEditFile.path);
+		openFile(directEditFile);
+	}
+}
+
+export async function editDecryptedTmpCopy(encryptedFile: vscode.Uri, excludedFilePaths:string[], tempFiles: ExtendedTempFile[]) : Promise<void> {
+	// prep
+	let tempFile = getTempUri(encryptedFile);
+
+	let index = getTempFileIndex(tempFiles,tempFile);
+	if (index === -1) {
+		// add to tempFiles
+		addTempFilesEntry(tempFiles,tempFile);
+
+		// add to excluded files
+		excludedFilePaths.push(tempFile.path);
+
+		// decrypt
+		await decryptWithProgressBar(encryptedFile, tempFile);
+
+		// update tempFiles entry with file content
+		tempFiles[getTempFileIndex(tempFiles, tempFile)].content = fs.readFileSync(tempFile.fsPath,'utf-8');
+
+		// open TMP file
+		await openFile(tempFile);
+	}	
+}
+
+export async function openTextDocumentListener(textDocument:vscode.TextDocument, excludedFilePaths: string[], tempFiles: ExtendedTempFile[]) : Promise<void> {
+	// on open document: if it is a sops encrypted file: close and open a decrypted copy instead
+	let encryptedFile = vscode.Uri.file(gitFix(textDocument.fileName));
+
+	// only apply if this is a non-excluded sops encrypted file (and not a .git copy)
+	let isNotSopsEncrypted: boolean = !(await isSopsEncrypted(encryptedFile));
+	let isExcluded: boolean = excludedFilePaths.includes(encryptedFile.path);
+	if (isNotSopsEncrypted || isExcluded ) {
+		return;
+	}
+
+	await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+	await editDecryptedTmpCopy(encryptedFile,excludedFilePaths, tempFiles);
+}
+
+export async function closeTextDocumentListener(textDocument:vscode.TextDocument, excludedFilePaths: string[], tempFiles: ExtendedTempFile[]) : Promise<void> {
+	// on close document: 
+	// 	- remove document from excluded files (if present)
+	// 	- if it is a tmp version of SOPS encrypted file: remove entry, close terminal, delete
+	let closedFile = vscode.Uri.file(gitFix(textDocument.fileName));
+	removeElementFromArrayIfPresent(excludedFilePaths,closedFile.path);
+	removeTempFilesEntryAndDelete(tempFiles, closedFile);
+}
+
+export async function saveTextDocumentListener(textDocument:vscode.TextDocument, tempFiles: ExtendedTempFile[]) : Promise<void> {
+	// on save document: save and encrypt when it is a tmp file
+	let savedFile = vscode.Uri.file(gitFix(textDocument.fileName));
+	let content = textDocument.getText().trim();
+	copyEncryptSaveContentsIfTempFile(tempFiles, savedFile, content);
 }
