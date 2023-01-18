@@ -1,5 +1,4 @@
 import * as fs from "fs";
-import * as yaml from "yaml";
 import * as vscode from "vscode";
 import * as c from "./constants";
 import * as f from "./functions";
@@ -32,9 +31,9 @@ export class FilePool {
         let encryptedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
     
         // only apply if this is a non-excluded sops encrypted file (and not a .git copy)
-        let isNotSopsEncrypted: boolean = !(await f.isSopsEncrypted(encryptedFile));
+        let isSopsEncrypted: boolean = await f.isSopsEncrypted(encryptedFile);
         let isExcluded: boolean = this.excludedFilePaths.includes(encryptedFile.path);
-        if (isNotSopsEncrypted || isExcluded ) {
+        if (!isSopsEncrypted || isExcluded ) {
             return;
         }
     
@@ -71,48 +70,47 @@ export class FilePool {
     }
 
     private async _editDecryptedTmpCopy(encryptedFile: vscode.Uri) : Promise<void> {
-        // prep
         let tempFile = f.getTempUri(encryptedFile);
     
         let index = this._getTempFileIndex(tempFile);
-        if (index === -1) {
-            // add to tempFiles
-            this._addTempFilesEntry(tempFile);
-    
-            // add to excluded files
-            this.excludedFilePaths.push(tempFile.path);
-    
-            // decrypt
-            await f.decryptWithProgressBar(encryptedFile, tempFile);
-    
-            // update tempFiles entry with file content
-            this.tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath,'utf-8');
-    
-            // open TMP file
-            await f.openFile(tempFile);
-        }	
+        if (index !== -1) {
+            return;
+        }
+
+        this._addTempFilesEntry(tempFile);
+        this.excludedFilePaths.push(tempFile.path);
+        await f.decryptWithProgressBar(encryptedFile, tempFile);
+
+        // update tempFiles entry with file content
+        this.tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath,'utf-8');
+
+        await f.openFile(tempFile);
     }
 
     private _addTempFilesEntry(tempFile: vscode.Uri) : void {
         let index = this._getTempFileIndex(tempFile);
-        if (index === -1) {
-            let terminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: f.getParentUri(tempFile).fsPath});
-            this.tempFiles.push({
-                terminal:terminal, 
-                filePath:tempFile.path, 
-                content: ''
-            });
+        if (index !== -1) {
+            return;
         }
+
+        let terminal = vscode.window.createTerminal({name: c.terminalEncryptName, cwd: f.getParentUri(tempFile).fsPath});
+        this.tempFiles.push({
+            terminal:terminal, 
+            filePath:tempFile.path, 
+            content: ''
+        });
     }
 
     private _removeTempFilesEntryAndDelete(tempFile:vscode.Uri) : void {
         let index = this._getTempFileIndex(tempFile);
-        if (index !== -1) {
-            let terminal = this.tempFiles[index].terminal;
-            f.executeInTerminal(['exit'],terminal);
-            this.tempFiles.splice(index,1);
-            fs.unlinkSync(tempFile.fsPath);
+        if (index === -1) {
+            return;
         }
+
+        let terminal = this.tempFiles[index].terminal;
+        f.executeInTerminal(['exit'],terminal);
+        this.tempFiles.splice(index,1);
+        fs.unlinkSync(tempFile.fsPath);
     }
 
     private _removeExcludedPathsEntry(path:string) {
