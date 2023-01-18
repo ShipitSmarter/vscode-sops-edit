@@ -35,12 +35,12 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 
 export function getTempFileName(file:vscode.Uri) : string {
 	let fd = dissectUri(file);
-	return `${fd.filePureName}.${c.tempFilePreExtension}.${fd.extension}`;
+	return `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
 }
 
 export function getUnTempFileName(tempFile:vscode.Uri): string {
 	let tfd = dissectUri(tempFile);
-	return `${tfd.filePureName.replace(c.tempPreExtensionRegExp,'')}.${tfd.extension}`;
+	return `${tfd.filePureName.replace(getTempFilePreExtensionRegExp(),'')}.${tfd.extension}`;
 }
 
 export function getTempUri(file:vscode.Uri) : vscode.Uri {
@@ -156,4 +156,12 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	let content = yaml.parse(contentString);
 	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
 	return [getParentUri(sopsFile).path, fileRegexes];
+}
+
+export function getTempFilePreExtension() : string {
+	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
+}
+
+export function getTempFilePreExtensionRegExp() : RegExp {
+	return new RegExp(`\.${getTempFilePreExtension()}$`);
 }

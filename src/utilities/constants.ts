@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 export const sopsYamlGlob = '**/*.sops.yaml';
-export const tempFilePreExtension = vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
 export const terminalEncryptName = 'sops (encrypt)';
 export const terminalDecryptName = 'sops (decrypt)';
 
@@ -18,4 +17,3 @@ export const editDecryptedCopyString = 'Edit decrypted version';
 // unavoidable regexes
 export const gitExtensionRegExp = /\.git$/;
 export const getFileExtensionRegExp = /\.[^\.]*$/;
-export const tempPreExtensionRegExp = new RegExp(`\.${tempFilePreExtension}$`);
