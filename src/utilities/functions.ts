@@ -24,6 +24,11 @@ type ExtendedTempFile = {
 	content: string
 };
 
+type StdOutErr = {
+	stdout:string,
+	stderr:string
+};
+
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal)  {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
@@ -99,20 +104,23 @@ export async function fakeProgressUpdate(progressParameter:Progress, progress: {
 	return;
 }
 
-export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:vscode.Uri): Promise<void> {
+export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:vscode.Uri): Promise<StdOutErr> {
 	const parent = getParentUri(encryptedFile);
 	const enc = dissectUri(encryptedFile);
 	const temp = dissectUri(tempFile);
 
+	let out:StdOutErr = {stdout:'', stderr:''};
+
 	// async decrypt with progress bar
-	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
+	//const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
 	await vscode.window.withProgress(
 		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, enc.fileName)}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
 			const progressDetails = { isDone: false };
 			const decryptCommand = c.decryptionCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
-			void callInInteractiveTerminal(decryptCommand, decryptTerminal).then(() => {
+			void exec(decryptCommand, {cwd: parent.fsPath}).then((outLocal:{stdout:string, stderr:string}) => {
+				out = outLocal;
 				progress.report({ increment: 100 });
 				progressDetails.isDone = true;
 				return;
@@ -120,15 +128,14 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 			await fakeProgressUpdate(progress, progressDetails);			
 		}
 	);
-	return;
+	return out;
 }
 
-export async function copyEncrypt(extendedTempFile:ExtendedTempFile) : Promise<string[]> {
+export async function copyEncrypt(extendedTempFile:ExtendedTempFile) : Promise<StdOutErr> {
 	void fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
 	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
 	const cwd = getParentUri(extendedTempFile.originalFile).fsPath;
-	const { stdout, stderr } = await exec(c.encryptionCommand.replace(c.fileString, originalFileName), {cwd:cwd});
-	return [stdout, stderr];
+	return await exec(c.encryptionCommand.replace(c.fileString, originalFileName), {cwd:cwd});
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {

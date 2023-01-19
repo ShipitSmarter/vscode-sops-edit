@@ -9,6 +9,11 @@ type ExtendedTempFile = {
 	content: string
 };
 
+type StdOutErr = {
+	stdout:string,
+	stderr:string
+};
+
 export class FilePool {
     // pool of excluded file paths, existing of:
     //   - TMP files created by this extension
@@ -80,7 +85,7 @@ export class FilePool {
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         this._addTempFilesEntry(tempFile, encryptedFile);
         this._excludedFilePaths.push(tempFile.path);
-        await f.decryptWithProgressBar(encryptedFile, tempFile);
+        const out = await f.decryptWithProgressBar(encryptedFile, tempFile);
 
         // update tempFiles entry with file content
         this._tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath, 'utf-8');
@@ -133,8 +138,8 @@ export class FilePool {
         if (index !== -1 && this._tempFiles[index].content !== tempFileContent && this._encryptionTerminal) {
             this._tempFiles[index].content = tempFileContent;
             // f.copyEncrypt(this._tempFiles[index], this._encryptionTerminal);
-            const [stdout, stderr] = await f.copyEncrypt(this._tempFiles[index]);
-            const henk = [stdout, stderr];
+            const out = await f.copyEncrypt(this._tempFiles[index]);
+            const henk = out;
         }
     }
 
