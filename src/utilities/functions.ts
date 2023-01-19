@@ -20,11 +20,6 @@ type ExtendedTempFile = {
 	content: string
 };
 
-export async function closeTextDocument() : Promise<void> {
-	// original closeTextDocument is deprecated.
-    await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-}
-
 export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal)  {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
@@ -53,7 +48,8 @@ export function getTempUri(file:vscode.Uri) : vscode.Uri {
 }
 
 export async function openFile(file:vscode.Uri) : Promise<void> {
-	await vscode.workspace.openTextDocument(file).then( doc => vscode.window.showTextDocument(doc));
+	const doc = await vscode.workspace.openTextDocument(file);
+	await vscode.window.showTextDocument(doc);
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {

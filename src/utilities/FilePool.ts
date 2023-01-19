@@ -77,7 +77,7 @@ export class FilePool {
             return;
         }
 
-        await f.closeTextDocument();
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         this._addTempFilesEntry(tempFile, encryptedFile);
         this._excludedFilePaths.push(tempFile.path);
         await f.decryptWithProgressBar(encryptedFile, tempFile);
