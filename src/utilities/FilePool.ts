@@ -1,5 +1,5 @@
-import * as fs from "fs";
 import * as vscode from "vscode";
+import * as fs from "fs";
 import * as c from "./constants";
 import * as f from "./functions";
 
@@ -55,7 +55,7 @@ export class FilePool {
         // save and encrypt when it is a tmp file
         const savedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
         const content = textDocument.getText().trim();
-        this._copyEncryptSaveContentsIfTempFile(savedFile, content);
+        void this._copyEncryptSaveContentsIfTempFile(savedFile, content);
     }
 
     public editDirectly(files:vscode.Uri[]) : void {
@@ -128,11 +128,13 @@ export class FilePool {
         }
     }
 
-    private _copyEncryptSaveContentsIfTempFile(tempFile:vscode.Uri, tempFileContent: string) : void {
+    private async _copyEncryptSaveContentsIfTempFile(tempFile:vscode.Uri, tempFileContent: string) : Promise<void> {
         const index = this._getTempFileIndex(tempFile);
         if (index !== -1 && this._tempFiles[index].content !== tempFileContent && this._encryptionTerminal) {
             this._tempFiles[index].content = tempFileContent;
-            f.copyEncrypt(this._tempFiles[index], this._encryptionTerminal);
+            // f.copyEncrypt(this._tempFiles[index], this._encryptionTerminal);
+            const [stdout, stderr] = await f.copyEncrypt(this._tempFiles[index]);
+            const henk = [stdout, stderr];
         }
     }
 

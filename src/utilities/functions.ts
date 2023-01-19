@@ -1,7 +1,11 @@
+import * as vscode from "vscode";
 import * as fs from "fs";
 import * as yaml from "yaml";
-import * as vscode from "vscode";
+import * as cp from "node:child_process";
+import * as util from "node:util";
 import * as c from "./constants";
+
+const exec = util.promisify(cp.exec);
 
 type PatternSet = [string, string[]];
 type PathDetails = {
@@ -119,13 +123,12 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 	return;
 }
 
-export function copyEncrypt(extendedTempFile:ExtendedTempFile, terminal: vscode.Terminal) : void {
-	fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
+export async function copyEncrypt(extendedTempFile:ExtendedTempFile) : Promise<string[]> {
+	void fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
 	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
-	executeInTerminal([
-			`cd ${getParentUri(extendedTempFile.originalFile).fsPath}`,
-			c.encryptionCommand.replace(c.fileString, originalFileName)
-		], terminal);
+	const cwd = getParentUri(extendedTempFile.originalFile).fsPath;
+	const { stdout, stderr } = await exec(c.encryptionCommand.replace(c.fileString, originalFileName), {cwd:cwd});
+	return [stdout, stderr];
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
