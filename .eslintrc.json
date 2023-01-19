@@ -3,22 +3,62 @@
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": 6,
-        "sourceType": "module"
+        "sourceType": "module",
+        "project": "./tsconfig.json"
     },
     "plugins": [
         "@typescript-eslint"
     ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:@typescript-eslint/recommended-requiring-type-checking"
+    ],
     "rules": {
-        "@typescript-eslint/naming-convention": "warn",
-        "@typescript-eslint/semi": "warn",
-        "curly": "warn",
-        "eqeqeq": "warn",
-        "no-throw-literal": "warn",
-        "semi": "off"
-    },
-    "ignorePatterns": [
-        "out",
-        "dist",
-        "**/*.d.ts"
-    ]
+        "@typescript-eslint/naming-convention": [
+            "error",
+            {
+                "selector": "memberLike",
+                "modifiers": ["private"],
+                "format": ["camelCase"],
+                "leadingUnderscore": "require"
+            },
+            {
+                "selector": "memberLike",
+                "modifiers": ["protected"],
+                "format": ["camelCase"],
+                "leadingUnderscore": "require"
+            },
+            { 
+                "selector": ["memberLike"],
+                "format": ["camelCase"]
+            },
+            {
+                "selector": ["function"],
+                "format": ["camelCase"],
+                "leadingUnderscore": "require"
+            },
+            {
+                "selector": ["function"],
+                "modifiers": ["exported"],
+                "format": ["camelCase"],
+                "leadingUnderscore": "forbid"
+            },
+            {
+                "selector": "variable",
+                "types": ["boolean"],
+                "format": ["PascalCase"], // Prefix is trimmed, so format should be PascalCase e.g. (is)PascalCase
+                "prefix": ["is", "has", "can", "did", "will"]
+            }
+        ],
+        "@typescript-eslint/semi": ["error"],
+        "@typescript-eslint/explicit-member-accessibility": ["error"],
+        "@typescript-eslint/comma-spacing": ["error"],
+        "@typescript-eslint/restrict-template-expressions": "off",
+        "curly": ["error"],
+        "eqeqeq": ["error", "smart"],
+        "no-throw-literal": "error",
+        "semi": "off", // Disabled because we use @typescript-eslint/semi
+        "comma-spacing": "off" // Disabled because we use @typescript-eslint/comma-spacing
+    }
 }

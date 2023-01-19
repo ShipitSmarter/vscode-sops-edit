@@ -35,8 +35,16 @@ It does so by doing the following:
 
 ## Contributions
 
-### `onDidOpenTextDocument` listener
-This extension adds a listener that checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
+### Event listeners
+This extension adds the following event listeners:
+- `onDidOpenTextDocument` 
+  - Checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
+
+- `onDidSaveTextDocument`
+  - Checks for every saved document if it is a decrypted TMP file, and if so, saves and encrypts changes to original SOPS encrypted file.
+
+- `onDidCloseTextDocument`
+  - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
 
 ### Right-mouse-button `SOPS: edit directly`
 

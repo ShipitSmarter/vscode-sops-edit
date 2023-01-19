@@ -3,104 +3,64 @@ import * as yaml from "yaml";
 import * as vscode from "vscode";
 import * as c from "./constants";
 
-export type PatternSet = [string, string[]];
-export type PathDetails = {
-	filePath:string, 
+type PatternSet = [string, string[]];
+type PathDetails = {
 	fileName:string, 
-	parentPath:string, 
+	parent:vscode.Uri, 
 	filePureName:string, 
 	extension:string
 };
+type Progress = vscode.Progress<{
+    message?: string | undefined;
+    increment?: number | undefined;
+}>;
+type ExtendedTempFile = {
+	tempFile: vscode.Uri,
+    originalFile: vscode.Uri,
+	content: string
+};
 
-export async function getWorkspaceFiles(matchString: string): Promise<string[]> {
-	// get paths to files in workspace that match a glob pattern
-	let functionsFiles = await vscode.workspace.findFiles(matchString);
-	let outFiles: string[] = [];
-	for (let index = 0; index < functionsFiles.length; index++) {
-		outFiles[index] = cleanPath(functionsFiles[index].fsPath);
-	}
-	return outFiles;
-}
-
-export function cleanPath (anyPath: string) : string {
-	return anyPath.replace(/\\/g, '/').replace('//','/');
-}
-
-export function parentPath (filePath: string) : string {
-	return filePath.replace(/\/[^\/]+$/,'');
-}
-
-export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal = vscode.window.createTerminal()) : vscode.Terminal {
+export function executeInTerminal(commandArray:string[], terminal:vscode.Terminal)  {
 	for (const psCommand of commandArray) {
 		terminal.sendText(psCommand);
 	}
-	return terminal;
 }
 
-export function dissectPath(filePath: string) : PathDetails {
-	let fPath = cleanPath(filePath);
-	let fName = fPath.split('/').pop() ?? '';
+export function getParentUri(file:vscode.Uri) : vscode.Uri {
+	return vscode.Uri.joinPath(file, '..');
+}
+
+export function dissectUri(file:vscode.Uri) : PathDetails {
+	const fName = file.path.split('/').pop() ?? '';
 
 	return {
-		filePath: fPath,
 		fileName: fName,
-		parentPath: parentPath(fPath),
-		filePureName: fName.replace(/\.[^\.]*$/,''),
+		parent: getParentUri(file),
+		filePureName: fName.replace(c.getFileExtensionRegExp, ''),
 		extension: fName.split('.').pop() ?? ''
 	};
 }
 
-export function copyEncrypt(parentPath:string, fileName:string, tempFileName:string, terminal: vscode.Terminal) : void {
-	fs.copyFileSync(`${parentPath}/${tempFileName}`,`${parentPath}/${fileName}`);
-	encrypt(fileName, tempFileName, terminal);
+export function getTempUri(file:vscode.Uri) : vscode.Uri {
+	const fd = dissectUri(file);
+	const tempFileName = `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
+	return vscode.Uri.joinPath(fd.parent, tempFileName);
 }
 
-export function encrypt(fileName:string, tempFileName:string, terminal:vscode.Terminal): void {
-	executeInTerminal([replaceInCommand(c.encryptionCommand,fileName,tempFileName)], terminal);
-}
-
-export function replaceInCommand(command:string, fileName:string, tempFileName:string) : string {
-	return command.replace(c.fileString,fileName).replace(c.tempFileString,tempFileName);
-}
-
-export async function fileIsSopsEncrypted(filePath:string) : Promise<boolean> {
-	// go through all regexes in all .sops.yaml files, combine them with 
-	// the .sops.yaml file location, and return if given file path matches any
-	var sopsFiles =  await getWorkspaceFiles(c.sopsYamlGlob);
-	for (const sf of sopsFiles) {
-		var pr: PatternSet = getSopsPatternsFromFile(sf);
-		for (const re of pr[1]) {
-			if (new RegExp(`${pr[0]}/.*${re}`).test(filePath)) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
-export function getSopsPatternsFromFile(sopsFilePath:string) : PatternSet {
-	// open .sops.yaml file, extract path_regex patterns,
-	// combine with file location to return a PatternSet
-	let sopsFile: PathDetails = dissectPath(sopsFilePath);
-	let contentString: string = fs.readFileSync(sopsFilePath,'utf-8');
-	let content = yaml.parse(contentString);
-	let fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
-	return [sopsFile.parentPath, fileRegexes];
-}
-
-export async function openFile(filePath:string) : Promise<void> {
-	let openPath = vscode.Uri.file(filePath);
-	vscode.commands.executeCommand('vscode.open',openPath);
+export async function openFile(file:vscode.Uri) : Promise<void> {
+	const doc = await vscode.workspace.openTextDocument(file);
+	await vscode.window.showTextDocument(doc);
 }
 
 export async function callInInteractiveTerminal(command: string, terminal: vscode.Terminal): Promise<vscode.TerminalExitStatus> {
 	// wrapper function for terminal call to make it async and 
 	// return promise once terminal is closed
+	// from https://stackoverflow.com/a/72887036/1716283
 	terminal.sendText(command, false);
 	terminal.sendText("; exit");
 	return new Promise((resolve, reject) => {
 		const disposeToken = vscode.window.onDidCloseTerminal(
-			async (closedTerminal) => {
+			(closedTerminal) => {
 			if (closedTerminal === terminal) {
 				disposeToken.dispose();
 				if (terminal.exitStatus !== undefined) {
@@ -114,19 +74,86 @@ export async function callInInteractiveTerminal(command: string, terminal: vscod
 	});
 }
 
+export function gitFix(path:string) : string {
+	return path.replace(c.gitExtensionRegExp, '');
+}
+
 export async function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
-export async function fakeProgressUpdate(progressParameter:any, progress: { isDone:boolean }) : Promise<void> {
-	var rem = 100;
+export async function fakeProgressUpdate(progressParameter:Progress, progress: { isDone:boolean }) : Promise<void> {
+	let rem = 100;
 	while(!progress.isDone) {
 		await delay(1000);
-		let inc = Math.floor(rem/2.5);
+		const inc = Math.floor(rem/2.5);
 		rem -= inc;
 		if (inc > 1) {
 			progressParameter.report({ increment: inc});
 		}
 	}
 	return;
+}
+
+export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:vscode.Uri): Promise<void> {
+	const parent = getParentUri(encryptedFile);
+	const enc = dissectUri(encryptedFile);
+	const temp = dissectUri(tempFile);
+
+	// async decrypt with progress bar
+	const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
+	await vscode.window.withProgress(
+		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, enc.fileName)}, 
+		async (progress) => {
+			progress.report({  increment: 0 });
+			const progressDetails = { isDone: false };
+			const decryptCommand = c.decryptionCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
+			void callInInteractiveTerminal(decryptCommand, decryptTerminal).then(() => {
+				progress.report({ increment: 100 });
+				progressDetails.isDone = true;
+				return;
+			});
+			await fakeProgressUpdate(progress, progressDetails);			
+		}
+	);
+	return;
+}
+
+export function copyEncrypt(extendedTempFile:ExtendedTempFile, terminal: vscode.Terminal) : void {
+	fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
+	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
+	executeInTerminal([
+			`cd ${getParentUri(extendedTempFile.originalFile).fsPath}`,
+			c.encryptionCommand.replace(c.fileString, originalFileName)
+		], terminal);
+}
+
+export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
+	// go through all regexes in all .sops.yaml files, combine them with 
+	// the .sops.yaml file location, and return if given file path matches any
+	const sopsFiles =  await vscode.workspace.findFiles(c.sopsYamlGlob);
+	for (const sf of sopsFiles) {
+		const pr: PatternSet = getSopsPatternsFromFile(sf);
+		for (const re of pr[1]) {
+			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
+	// open .sops.yaml file, extract path_regex patterns, combine with file location to return a PatternSet
+	const contentString: string = fs.readFileSync(sopsFile.fsPath, 'utf-8');
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	const content = yaml.parse(contentString);
+	
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+	const fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
+	return [getParentUri(sopsFile).path, fileRegexes];
+}
+
+export function getTempFilePreExtension() : string {
+	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
 }
