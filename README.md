@@ -15,9 +15,7 @@ This extension is built to facilitate the following:
 It does so by doing the following:
 - Whenever you try to open a SOPS encrypted file `*`, the extension does the following:
   - The encrypted file is immediately closed
-  - A decryption terminal is opened, decrypting the file to a `[filename].tmp.[file extension]` copy, and closed directly after
-  - An encryption terminal is opened
-  - The decrypted `tmp` file is opened instead
+  - The file is decrypted to a `[filename].tmp.[extension]` copy, which is opened instead
 - Updating the `tmp` file will result in an updated, original SOPS encrypted file
 - Closing the `tmp` file will automatically delete the `tmp` file as well, making sure decrypted data never stays on disk and is never accidentally committed
 
@@ -46,19 +44,32 @@ This extension adds the following event listeners:
 - `onDidCloseTextDocument`
   - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
 
-### Right-mouse-button `SOPS: edit directly`
 
-![SOPS edit directly](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
+### Right-mouse buttons
 
-This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file (even when not SOPS encrypted).
+![Buttons](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/buttons.png)
 
-It allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
+This extension adds the following three buttons to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file.
 
-### Setting: `Temp File Pre Extension`
+-  `SOPS: edit directly`
+   - Allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
 
-![Setting: tmp file pre extension](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/setting_temp_file_pre_extension.png.png)
+- `SOPS: decrypt in-place`
+  - Decrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
 
-This extension adds setting `Sops-edit: Temp File Pre Extension`, which allows you to change the default `tmp` pre-extension to something different.
+- `SOPS: encrypt in-place`
+  - Encrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
+
+### Settings 
+
+![Settings](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/settings.png)
+
+This extension adds the following settings:
+
+- `Temp File Pre Extension`
+  - Allows you to change the default `tmp` pre-extension to something different
+- `Only Use Buttons`
+  - Allows you to not have the auto-decrypt and encrypt done every time, but only use the right-mouse-menu buttons
 
 
 ## Limitations
@@ -73,5 +84,7 @@ This extension does NOT do or help with any of the following:
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
-- [NodeJs](https://nodejs.org/en/)'s [File System API](https://nodejs.org/api/fs.html)
+- [NodeJs](https://nodejs.org/en/)'s:
+  - [File System API](https://nodejs.org/api/fs.html)
+  - [Child process](https://nodejs.org/api/child_process.html)
 - [eemeli](https://www.npmjs.com/~eemeli)'s excellent [yaml](https://www.npmjs.com/package/yaml) package

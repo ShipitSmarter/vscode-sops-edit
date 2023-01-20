@@ -2,7 +2,7 @@
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
   "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "ShipitSmarter",
   "author": {
     "name": "ShipitSmarter",
@@ -43,12 +43,30 @@
       {
         "command": "sops-edit.direct-edit",
         "title": "SOPS: edit directly"
+      },
+      {
+        "command": "sops-edit.decrypt",
+        "title": "SOPS: decrypt in-place"
+      },
+      {
+        "command": "sops-edit.encrypt",
+        "title": "SOPS: encrypt in-place"
       }
     ],
     "menus": {
       "explorer/context": [
         {
           "command": "sops-edit.direct-edit",
+          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
+          "group": "sops-edit"
+        },
+        {
+          "command": "sops-edit.decrypt",
+          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
+          "group": "sops-edit"
+        },
+        {
+          "command": "sops-edit.encrypt",
           "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
           "group": "sops-edit"
         }
@@ -61,6 +79,11 @@
           "type": "string",
           "default": "tmp",
           "description": "Pre-extension added to temporary decrypted files; example: test.enc.yaml => test.enc.tmp.yaml (default: 'tmp')"
+        },
+        "sops-edit.onlyUseButtons": {
+          "type": "boolean",
+          "default": false,
+          "description": "Check this checkbox if you don't want the auto-decrypt and encrypt, but just want to use the right-mouse-menu buttons"
         }
       }
     }
@@ -98,6 +121,7 @@
   },
   "icon": "img/sops_easy_edit_logo.png",
   "dependencies": {
+    "child_process": "^1.0.2",
     "fs": "^0.0.1-security",
     "yaml": "^2.2.1"
   }
