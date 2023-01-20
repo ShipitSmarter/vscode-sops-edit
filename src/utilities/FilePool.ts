@@ -35,6 +35,14 @@ export class FilePool {
         if (!isSopsEncrypted || isExcluded ) {
             return;
         }
+
+        // close the file if still opened
+        const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map(tg => tg.tabs).flat();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const index = tabs.findIndex((t:unknown) => t.input.uri.path === encryptedFile.path);
+        if (index !== -1) {
+            await vscode.window.tabGroups.close(tabs[index]);
+        }
     
         await this._editDecryptedTmpCopy(encryptedFile);
     }
@@ -76,7 +84,7 @@ export class FilePool {
         this._addTempFilesEntry(tempFile, encryptedFile);
         this._excludedFilePaths.push(tempFile.path);
 
-        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        //await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         const out = await f.decryptWithProgressBar(encryptedFile, tempFile);
 
         if (out.stderr) {
