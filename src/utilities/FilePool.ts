@@ -15,9 +15,9 @@ export class FilePool {
     private _excludedFilePaths: string[];
     
     // pool of open TMP file details, each item containing:
+    //  - original file path
 	//  - temp file path
 	//  - temp file content (to track file changes)
-	//  - encryption terminal
     private _tempFiles: ExtendedTempFile[];
 
     public constructor() {
