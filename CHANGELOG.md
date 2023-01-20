@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.0.4
+- Removed terminal use, instead using `child_process` package to handle shell commands
+- Now shows a nice vscode-native Error message when decryption/encryption cannot happen for some reason
+
 # 0.0.3
 - Bugfixes
   - No longer multiple encryption/decryption terminals opening for a single file

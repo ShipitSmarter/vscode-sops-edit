@@ -15,9 +15,7 @@ This extension is built to facilitate the following:
 It does so by doing the following:
 - Whenever you try to open a SOPS encrypted file `*`, the extension does the following:
   - The encrypted file is immediately closed
-  - A decryption terminal is opened, decrypting the file to a `[filename].tmp.[file extension]` copy, and closed directly after
-  - An encryption terminal is opened
-  - The decrypted `tmp` file is opened instead
+  - The file is decrypted to a `[filename].tmp.[extension]` copy, which is opened instead
 - Updating the `tmp` file will result in an updated, original SOPS encrypted file
 - Closing the `tmp` file will automatically delete the `tmp` file as well, making sure decrypted data never stays on disk and is never accidentally committed
 
@@ -73,5 +71,7 @@ This extension does NOT do or help with any of the following:
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
-- [NodeJs](https://nodejs.org/en/)'s [File System API](https://nodejs.org/api/fs.html)
+- [NodeJs](https://nodejs.org/en/)'s:
+  - [File System API](https://nodejs.org/api/fs.html)
+  - [Child process](https://nodejs.org/api/child_process.html)
 - [eemeli](https://www.npmjs.com/~eemeli)'s excellent [yaml](https://www.npmjs.com/package/yaml) package
