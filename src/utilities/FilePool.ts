@@ -73,16 +73,17 @@ export class FilePool {
             return;
         }
 
+        this._addTempFilesEntry(tempFile, encryptedFile);
+        this._excludedFilePaths.push(tempFile.path);
+
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
         const out = await f.decryptWithProgressBar(encryptedFile, tempFile);
         if (out.stderr) {
             void vscode.window.showErrorMessage(`Error decrypting ${f.dissectUri(encryptedFile).fileName}: ${out.stderr}`);
-            fs.unlinkSync(tempFile.fsPath);
+            this._removeTempFilesEntryAndDelete(tempFile);
+            this._removeExcludedPathsEntry(tempFile.path);
             return;
         }
-
-        this._addTempFilesEntry(tempFile, encryptedFile);
-        this._excludedFilePaths.push(tempFile.path);
 
         // update tempFiles entry with file content
         this._tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath, 'utf-8');
@@ -123,7 +124,6 @@ export class FilePool {
         const index = this._getTempFileIndex(tempFile);
         if (index !== -1 && this._tempFiles[index].content !== tempFileContent) {
             this._tempFiles[index].content = tempFileContent;
-            // f.copyEncrypt(this._tempFiles[index], this._encryptionTerminal);
             const out = f.copyEncrypt(this._tempFiles[index]);
             if (out.stderr) {
                 void vscode.window.showErrorMessage(`Error encrypting ${f.dissectUri(this._tempFiles[index].originalFile).fileName}: ${out.stderr}`);

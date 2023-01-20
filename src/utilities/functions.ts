@@ -87,7 +87,6 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 	let out:Answer = {stdout:'', stderr:''};
 
 	// async decrypt with progress bar
-	//const decryptTerminal = vscode.window.createTerminal({name: c.terminalDecryptName, cwd: parent.fsPath});
 	await vscode.window.withProgress(
 		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, enc.fileName)}, 
 		async (progress) => {
@@ -110,6 +109,8 @@ export function copyEncrypt(extendedTempFile:ExtendedTempFile) : Answer {
 	void fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
 	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
 	const cwd = getParentUri(extendedTempFile.originalFile).fsPath;
+
+	// decrypt and return command output
 	let out = {stdout:'', stderr:''};
 	cp.exec(c.encryptionCommand.replace(c.fileString, originalFileName), {cwd:cwd}, (_, stdout, stderr) => {
 		out = {stdout:stdout, stderr:stderr};
