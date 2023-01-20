@@ -147,3 +147,11 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 export function getTempFilePreExtension() : string {
 	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
 }
+
+export async function closeFileIfOpen(file:vscode.Uri) : Promise<void> {
+	const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map(tg => tg.tabs).flat();
+	const index = tabs.findIndex(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.path === file.path);
+	if (index !== -1) {
+		await vscode.window.tabGroups.close(tabs[index]);
+	}
+}

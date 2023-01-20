@@ -36,14 +36,7 @@ export class FilePool {
             return;
         }
 
-        // close the file if still opened
-        const tabs: vscode.Tab[] = vscode.window.tabGroups.all.map(tg => tg.tabs).flat();
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        const index = tabs.findIndex((t:unknown) => t.input.uri.path === encryptedFile.path);
-        if (index !== -1) {
-            await vscode.window.tabGroups.close(tabs[index]);
-        }
-    
+        await f.closeFileIfOpen(encryptedFile);
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     
