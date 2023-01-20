@@ -79,21 +79,51 @@ export async function fakeProgressUpdate(progressParameter:Progress, progress: {
 	return;
 }
 
-export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:vscode.Uri): Promise<Answer> {
-	const parent = getParentUri(encryptedFile);
+export function decryptCommand(files:vscode.Uri[]) : void {
+	if (files.length === 0) {
+		noFileSelectedErrormessage();
+        return;
+	}
+
+	void decryptInPlace(files[0]);
+}
+
+export function encryptCommand(files:vscode.Uri[]) : void {
+	if (files.length === 0) {
+		noFileSelectedErrormessage();
+        return;
+	}
+
+	void encrypt(files[0]);
+}
+
+export function noFileSelectedErrormessage() : void {
+	void vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
+}
+
+export async function decryptInPlace(encryptedFile:vscode.Uri) : Promise<Answer> {
+	const enc = dissectUri(encryptedFile);
+	const decryptCommand = c.decryptInPlaceCommand.replace(c.fileString, enc.fileName);
+	return await decryptWithProgressBar(encryptedFile, decryptCommand);
+}
+
+export async function decryptToTmpFile(encryptedFile:vscode.Uri, tempFile:vscode.Uri) : Promise<Answer> {
 	const enc = dissectUri(encryptedFile);
 	const temp = dissectUri(tempFile);
+	const decryptCommand = c.decryptToTmpCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
+	return await decryptWithProgressBar(encryptedFile, decryptCommand);
+}
+
+export async function decryptWithProgressBar(encryptedFile:vscode.Uri, decryptCommand:string): Promise<Answer> {
+	const enc = dissectUri(encryptedFile);
 
 	let out:Answer = {stdout:'', stderr:''};
-
-	// async decrypt with progress bar
 	await vscode.window.withProgress(
 		{location: vscode.ProgressLocation.Notification, cancellable: false, title: c.decryptionString.replace(c.fileString, enc.fileName)}, 
 		async (progress) => {
 			progress.report({  increment: 0 });
 			const progressDetails = { isDone: false };
-			const decryptCommand = c.decryptionCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
-			cp.exec(decryptCommand, {cwd: parent.fsPath}, (_, stdout, stderr) => {
+			cp.exec(decryptCommand, {cwd: enc.parent.fsPath}, (_, stdout, stderr) => {
 				out = {stdout:stdout, stderr:stderr};
 				progress.report({ increment: 100 });
 				progressDetails.isDone = true;
@@ -102,17 +132,21 @@ export async function decryptWithProgressBar(encryptedFile:vscode.Uri, tempFile:
 			await fakeProgressUpdate(progress, progressDetails);			
 		}
 	);
+	if (out.stderr) {
+		void vscode.window.showErrorMessage(`Error decrypting ${enc.fileName}: ${out.stderr}`);
+	}
 	return out;
 }
 
 export function copyEncrypt(extendedTempFile:ExtendedTempFile) : Answer {
 	void fs.copyFileSync(extendedTempFile.tempFile.fsPath, extendedTempFile.originalFile.fsPath);
-	const originalFileName = dissectUri(extendedTempFile.originalFile).fileName;
-	const cwd = getParentUri(extendedTempFile.originalFile).fsPath;
+	return encrypt(extendedTempFile.originalFile);	
+}
 
-	// decrypt and return command output
+export function encrypt(file:vscode.Uri) : Answer {
+	const fileDetails = dissectUri(file);
 	let out = {stdout:'', stderr:''};
-	cp.exec(c.encryptionCommand.replace(c.fileString, originalFileName), {cwd:cwd}, (_, stdout, stderr) => {
+	cp.exec(c.encryptCommand.replace(c.fileString, fileDetails.fileName), {cwd:fileDetails.parent.fsPath}, (_, stdout, stderr) => {
 		out = {stdout:stdout, stderr:stderr};
 	});
 	return out;

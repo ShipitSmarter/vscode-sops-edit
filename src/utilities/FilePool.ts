@@ -57,7 +57,7 @@ export class FilePool {
 
     public editDirectly(files:vscode.Uri[]) : void {
         if (files.length === 0) {
-            void vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
+            f.noFileSelectedErrormessage();
             return;
         } 
         
@@ -78,11 +78,10 @@ export class FilePool {
         this._excludedFilePaths.push(tempFile.path);
 
         //await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-        const out = await f.decryptWithProgressBar(encryptedFile, tempFile);
+        const out = await f.decryptToTmpFile(encryptedFile, tempFile);
 
         if (out.stderr) {
-            // show error and cancel
-            void vscode.window.showErrorMessage(`Error decrypting ${f.dissectUri(encryptedFile).fileName}: ${out.stderr}`);
+            // on error: cancel
             this._removeTempFilesEntryAndDelete(tempFile);
             this._removeExcludedPathsEntry(tempFile.path);
             return;

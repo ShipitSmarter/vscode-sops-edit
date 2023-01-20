@@ -44,13 +44,21 @@ This extension adds the following event listeners:
 - `onDidCloseTextDocument`
   - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
 
-### Right-mouse-button `SOPS: edit directly`
 
-![SOPS edit directly](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
+### Right-mouse buttons
 
-This extension adds right-mouse-menu button `SOPS: edit directly` to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file (even when not SOPS encrypted).
+![Buttons](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/buttons.png)
 
-It allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
+This extension adds the following three buttons to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file.
+
+#### `SOPS: edit directly`
+Allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
+
+#### `SOPS: decrypt in-place`
+Decrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
+
+#### `SOPS: encrypt in-place`
+Encrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
 
 ### Setting: `Temp File Pre Extension`
 
