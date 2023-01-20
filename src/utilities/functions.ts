@@ -69,10 +69,10 @@ export async function delay(ms: number) {
 export async function fakeProgressUpdate(progressParameter:Progress, progress: { isDone:boolean }) : Promise<void> {
 	let rem = 100;
 	while(!progress.isDone) {
-		await delay(300);
-		const inc = Math.floor(rem/3);
+		await delay(50);
+		const inc = Math.max(Math.floor(rem/20), 1);
 		rem -= inc;
-		if (inc > 1) {
+		if (rem > 0) {
 			progressParameter.report({ increment: inc});
 		}
 	}
