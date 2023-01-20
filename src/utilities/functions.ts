@@ -49,7 +49,7 @@ export function dissectUri(file:vscode.Uri) : PathDetails {
 
 export function getTempUri(file:vscode.Uri) : vscode.Uri {
 	const fd = dissectUri(file);
-	const tempFileName = `${fd.filePureName}.${getTempFilePreExtension()}.${fd.extension}`;
+	const tempFileName = `${fd.filePureName}.${getSettingTempFilePreExtension()}.${fd.extension}`;
 	return vscode.Uri.joinPath(fd.parent, tempFileName);
 }
 
@@ -178,8 +178,12 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	return [getParentUri(sopsFile).path, fileRegexes];
 }
 
-export function getTempFilePreExtension() : string {
+export function getSettingTempFilePreExtension() : string {
 	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
+}
+
+export function getSettingOnlyUseButtons() : boolean {
+	return vscode.workspace.getConfiguration().get<boolean>('sops-edit.onlyUseButtons') ?? false;
 }
 
 export async function closeFileIfOpen(file:vscode.Uri) : Promise<void> {

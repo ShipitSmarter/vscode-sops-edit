@@ -26,6 +26,9 @@ export class FilePool {
     }
 
     public async openTextDocumentListener(textDocument:vscode.TextDocument) : Promise<void> {
+        if (f.getSettingOnlyUseButtons()) {
+            return;
+        }
         // on open document: if it is a sops encrypted file: close and open a decrypted copy instead
         const encryptedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
     
@@ -41,6 +44,9 @@ export class FilePool {
     }
     
     public closeTextDocumentListener(textDocument:vscode.TextDocument) : void {
+        if (f.getSettingOnlyUseButtons()) {
+            return;
+        }
         // 	- remove document from excluded files (if present)
         // 	- if it is a tmp version of SOPS encrypted file: remove tempFiles entry, delete
         const closedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
@@ -49,6 +55,9 @@ export class FilePool {
     }
     
     public saveTextDocumentListener(textDocument:vscode.TextDocument) : void {
+        if (f.getSettingOnlyUseButtons()) {
+            return;
+        }
         // save and encrypt when it is a tmp file
         const savedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
         const content = textDocument.getText().trim();

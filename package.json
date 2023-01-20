@@ -79,6 +79,11 @@
           "type": "string",
           "default": "tmp",
           "description": "Pre-extension added to temporary decrypted files; example: test.enc.yaml => test.enc.tmp.yaml (default: 'tmp')"
+        },
+        "sops-edit.onlyUseButtons": {
+          "type": "boolean",
+          "default": false,
+          "description": "Check this checkbox if you don't want the auto-decrypt and encrypt, but just want to use the right-mouse-menu buttons"
         }
       }
     }

@@ -60,11 +60,16 @@ This extension adds the following three buttons to any `yaml`/`yml`/`json`/`env`
 - `SOPS: encrypt in-place`
   - Encrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
 
-### Setting: `Temp File Pre Extension`
+### Settings 
 
-![Setting: tmp file pre extension](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/setting_temp_file_pre_extension.png.png)
+![Settings](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/settings.png)
 
-This extension adds setting `Sops-edit: Temp File Pre Extension`, which allows you to change the default `tmp` pre-extension to something different.
+This extension adds the following settings:
+
+- `Temp File Pre Extension`
+  - Allows you to change the default `tmp` pre-extension to something different
+- `Only Use Buttons`
+  - Allows you to not have the auto-decrypt and encrypt done every time, but only use the right-mouse-menu buttons
 
 
 ## Limitations
