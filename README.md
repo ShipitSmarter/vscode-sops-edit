@@ -2,6 +2,8 @@
 
 ![SOPS edit use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_use_gif.gif)
 
+![Decrypt Encrypt use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/decrypt_encrypt_use_gif.gif)
+
 Once you have [SOPS](https://github.com/mozilla/sops) setup for your [GIT](https://git-scm.com/) project, it can be a pain in the behind trying to not forget decrypting SOPS encrypted files before editing, and encrypting them again before committing.
 
 This extension makes sure you don't have to think about that anymore. It will allow you to only see and edit decrypted files, but only save and commit the encrypted versions.
