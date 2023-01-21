@@ -45,14 +45,6 @@
         "title": "SOPS: edit directly"
       },
       {
-        "command": "sops-edit.decrypt-context",
-        "title": "SOPS: decrypt in-place"
-      },
-      {
-        "command": "sops-edit.encrypt-context",
-        "title": "SOPS: encrypt in-place"
-      },
-      {
         "command": "sops-edit.decrypt-editor",
         "title": "Decrypt"
       },
@@ -65,16 +57,6 @@
       "explorer/context": [
         {
           "command": "sops-edit.direct-edit",
-          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
-          "group": "sops-edit"
-        },
-        {
-          "command": "sops-edit.decrypt-context",
-          "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
-          "group": "sops-edit"
-        },
-        {
-          "command": "sops-edit.encrypt-context",
           "when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
           "group": "sops-edit"
         }

@@ -12,9 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.onDidSaveTextDocument( (textDocument:vscode.TextDocument) => filePool.saveTextDocumentListener(textDocument)),
 		vscode.window.onDidChangeActiveTextEditor((editor:vscode.TextEditor|undefined) => EditorContext.setContexts(editor)),
 		vscode.commands.registerCommand('sops-edit.direct-edit', (_, files:vscode.Uri[]) => filePool.editDirectly(files)),
-		vscode.commands.registerCommand('sops-edit.decrypt-context', (_, files:vscode.Uri[]) => decryptCommand(files)),
 		vscode.commands.registerCommand('sops-edit.decrypt-editor', (uri:vscode.Uri, ) => decryptCommand(uri)),
-		vscode.commands.registerCommand('sops-edit.encrypt-context', (_, files:vscode.Uri[]) => encryptCommand(files)),
 		vscode.commands.registerCommand('sops-edit.encrypt-editor', (uri:vscode.Uri, ) => encryptCommand(uri))
 	);
 }
