@@ -2,7 +2,7 @@
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
   "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "ShipitSmarter",
   "author": {
     "name": "ShipitSmarter",
@@ -85,7 +85,7 @@
         "sops-edit.onlyUseButtons": {
           "type": "boolean",
           "default": false,
-          "description": "Check this checkbox if you don't want the auto-decrypt and encrypt, but just want to use the right-mouse-menu buttons"
+          "description": "Check this checkbox if you just want to use the decrypt/encrypt buttons instead of the auto-decrypt/encrypt"
         }
       }
     }

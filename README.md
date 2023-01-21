@@ -43,22 +43,30 @@ This extension adds the following event listeners:
 
 - `onDidCloseTextDocument`
   - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
+  
+- `onDidChangeActiveTextEditor`
+  - Check if the currently active text editor is a SOPS encrypted file, and if so, adds `Decrypt` and `Encrypt` buttons to its top-right editor menu.
+
+### Editor menu buttons
+
+![Decrypt encrypt](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/editor_decrypt_encrypt.png)
+
+This extension adds the following buttons to the top-right editor menu of every SOPS encrypted file `*`:
+- `Decrypt`
+  - Decrypts the file in-place
+- `Encrypt`
+  - Encrypts the file in-place
 
 
+`*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
 ### Right-mouse buttons
 
-![Buttons](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/buttons.png)
+![Right-mouse-menu](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
 
-This extension adds the following three buttons to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file.
+This extension adds the following right-mouse-menu button to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file:
 
 -  `SOPS: edit directly`
    - Allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
-
-- `SOPS: decrypt in-place`
-  - Decrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
-
-- `SOPS: encrypt in-place`
-  - Encrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
 
 ### Settings 
 
@@ -69,7 +77,7 @@ This extension adds the following settings:
 - `Temp File Pre Extension`
   - Allows you to change the default `tmp` pre-extension to something different
 - `Only Use Buttons`
-  - Allows you to not have the auto-decrypt and encrypt done every time, but only use the right-mouse-menu buttons
+  - Allows you to not get the auto-decrypt and encrypt behaviour, but only use the decrypt/encrypt buttons instead
 
 
 ## Limitations
