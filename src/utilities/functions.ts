@@ -79,22 +79,37 @@ export async function fakeProgressUpdate(progressParameter:Progress, progress: {
 	return;
 }
 
-export function decryptCommand(files:vscode.Uri[]) : void {
-	if (files.length === 0) {
-		noFileSelectedErrormessage();
-        return;
+export function decryptCommand(files:vscode.Uri[]|vscode.Uri) : void {
+	const file = getSingleUriFromInput(files);
+	if (!file) {
+		return;
 	}
 
-	void decryptInPlace(files[0]);
+	void decryptInPlace(file);
 }
 
-export function encryptCommand(files:vscode.Uri[]) : void {
-	if (files.length === 0) {
-		noFileSelectedErrormessage();
-        return;
+export function encryptCommand(files:vscode.Uri[]|vscode.Uri) : void {
+	const file = getSingleUriFromInput(files);
+	if (!file) {
+		return;
 	}
 
-	void encrypt(files[0]);
+	void encrypt(file);
+}
+
+export function getSingleUriFromInput(input:vscode.Uri[]|vscode.Uri) : vscode.Uri|void {
+	let file:vscode.Uri;
+	if (Array.isArray(input)) {
+		if (input.length === 0) {
+			noFileSelectedErrormessage();
+			return;
+		}
+		file = input[0];
+	} else {
+		file = input;
+	}
+
+	return file;
 }
 
 export function noFileSelectedErrormessage() : void {
