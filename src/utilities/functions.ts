@@ -68,7 +68,7 @@ export function gitFix(path:string) : string {
 	return path.replace(c.gitExtensionRegExp, '');
 }
 
-export function executeCommand(command:string, cwd:vscode.Uri, errorMessage:string) : Answer {
+export function executeShellCommand(command:string, cwd:vscode.Uri, errorMessage:string) : Answer {
 	let out = {stdout:'', stderr:''};
 	cp.exec(command, {cwd:cwd.fsPath}, (_, stdout, stderr) => {
 		out = {stdout:stdout, stderr:stderr};
@@ -79,7 +79,7 @@ export function executeCommand(command:string, cwd:vscode.Uri, errorMessage:stri
 	return out;
 }
 
-export async function executeCommandWithProgressBar(command:string, cwd:vscode.Uri, progressTitle:string, errorMessage:string) : Promise<Answer> {
+export async function executeShellCommandWithProgressBar(command:string, cwd:vscode.Uri, progressTitle:string, errorMessage:string) : Promise<Answer> {
 	// run a shell command and show a moving progress bar in the mean time
 	let out:Answer = {stdout:'', stderr:''};
 	await vscode.window.withProgress(
@@ -150,7 +150,7 @@ export async function decryptInPlace(encryptedFile:vscode.Uri) : Promise<Answer>
 	const decryptionCommand = c.decryptInPlaceCommand.replace(c.fileString, enc.fileName);
 	const progressTitle = `Decrypting ${enc.fileName} ...`;
 	const errorMessage = `Error decrypting ${enc.fileName}`;
-	return await executeCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
+	return await executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
 }
 
 export async function decryptToTmpFile(encryptedFile:vscode.Uri, tempFile:vscode.Uri) : Promise<Answer> {
@@ -159,7 +159,7 @@ export async function decryptToTmpFile(encryptedFile:vscode.Uri, tempFile:vscode
 	const decryptionCommand = c.decryptToTmpCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
 	const progressTitle = `Decrypting ${enc.fileName} ...`;
 	const errorMessage = `Error decrypting ${enc.fileName}`;
-	return await executeCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
+	return await executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
 }
 
 export function copyEncrypt(tempFile:vscode.Uri, originalFile:vscode.Uri) : Answer {
@@ -171,7 +171,7 @@ export function encryptInPlace(file:vscode.Uri) : Answer {
 	const fileDetails = dissectUri(file);
 	const command = c.encryptCommand.replace(c.fileString, fileDetails.fileName);
 	const errorMessage = `Error encrypting ${fileDetails.fileName}`;
-	return executeCommand(command, fileDetails.parent, errorMessage);
+	return executeShellCommand(command, fileDetails.parent, errorMessage);
 }
 
 export async function encryptInPlaceWithProgressBar(file:vscode.Uri): Promise<Answer> {
@@ -179,7 +179,7 @@ export async function encryptInPlaceWithProgressBar(file:vscode.Uri): Promise<An
 	const command = c.encryptCommand.replace(c.fileString, fileDetails.fileName);
 	const progressTitle = `Encrypting ${fileDetails.fileName} ...`;
 	const errorMessage = `Error encrypting ${fileDetails.fileName}`;
-	return await executeCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
+	return await executeShellCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {

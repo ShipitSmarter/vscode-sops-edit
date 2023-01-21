@@ -81,12 +81,12 @@
       ],
       "editor/title": [
 				{
-					"when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
+					"when": "sops-edit.isSopsEncrypted",
 					"command": "sops-edit.decrypt-editor",
 					"group": "navigation"
 				},
         {
-					"when": "resourceFilename =~ /^[\\s\\S]*\\.(yaml|yml|json|env|ini|txt)$/",
+					"when": "sops-edit.isSopsEncrypted",
 					"command": "sops-edit.encrypt-editor",
 					"group": "navigation"
 				}

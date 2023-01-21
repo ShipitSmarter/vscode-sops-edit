@@ -33,9 +33,9 @@ export class FilePool {
         const encryptedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
     
         // only apply if this is a non-excluded sops encrypted file
-        const isSopsEncrypted: boolean = await f.isSopsEncrypted(encryptedFile);
+        const isSopsEncryptedFile: boolean = await f.isSopsEncrypted(encryptedFile);
         const isExcluded: boolean = this._excludedFilePaths.includes(encryptedFile.path);
-        if (!isSopsEncrypted || isExcluded ) {
+        if (!isSopsEncryptedFile || isExcluded ) {
             return;
         }
 
