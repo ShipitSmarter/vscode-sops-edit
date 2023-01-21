@@ -133,13 +133,13 @@ export class FilePool {
 
     private _copyEncryptSaveContentsIfTempFile(tempFile:vscode.Uri, tempFileContent: string) : void {
         const index = this._getTempFileIndex(tempFile);
-        if (index !== -1 && this._tempFiles[index].content !== tempFileContent) {
-            this._tempFiles[index].content = tempFileContent;
-            const out = f.copyEncrypt(this._tempFiles[index]);
-            if (out.stderr) {
-                void vscode.window.showErrorMessage(`Error encrypting ${f.dissectUri(this._tempFiles[index].originalFile).fileName}: ${out.stderr}`);
-            }
+        if (index === -1 || this._tempFiles[index].content === tempFileContent) {
+            return;
         }
+
+        const extTempFile = this._tempFiles[index];
+        extTempFile.content = tempFileContent;
+        void f.copyEncrypt(extTempFile.tempFile, extTempFile.originalFile);
     }
 
     private _getTempFileIndex(tempFile:vscode.Uri) : number {
