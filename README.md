@@ -2,6 +2,8 @@
 
 ![SOPS edit use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_use_gif.gif)
 
+![Decrypt Encrypt use gif](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/decrypt_encrypt_use_gif.gif)
+
 Once you have [SOPS](https://github.com/mozilla/sops) setup for your [GIT](https://git-scm.com/) project, it can be a pain in the behind trying to not forget decrypting SOPS encrypted files before editing, and encrypting them again before committing.
 
 This extension makes sure you don't have to think about that anymore. It will allow you to only see and edit decrypted files, but only save and commit the encrypted versions.
@@ -35,30 +37,31 @@ It does so by doing the following:
 
 ### Event listeners
 This extension adds the following event listeners:
-- `onDidOpenTextDocument` 
-  - Checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
+- Checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
+- Checks for every saved document if it is a decrypted TMP file, and if so, saves and encrypts changes to original SOPS encrypted file.
+- Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
+- Check if the currently active text editor is a SOPS encrypted file, and if so, adds `Decrypt` and `Encrypt` buttons to its top-right editor menu.
 
-- `onDidSaveTextDocument`
-  - Checks for every saved document if it is a decrypted TMP file, and if so, saves and encrypts changes to original SOPS encrypted file.
+### Editor menu buttons
 
-- `onDidCloseTextDocument`
-  - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
+![Decrypt encrypt](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/editor_decrypt_encrypt.png)
+
+This extension adds the following buttons to the top-right editor menu of every SOPS encrypted file `*`:
+- `Decrypt`
+  - Decrypts the file in-place
+- `Encrypt`
+  - Encrypts the file in-place
 
 
+`*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.
 ### Right-mouse buttons
 
-![Buttons](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/buttons.png)
+![Right-mouse-menu](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/sops_edit_directly.png)
 
-This extension adds the following three buttons to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file.
+This extension adds the following right-mouse-menu button to any `yaml`/`yml`/`json`/`env`/`ini`/`txt` file:
 
 -  `SOPS: edit directly`
    - Allows you to see and edit the SOPS encrypted file directly, without the extension closing it immediately (which is the new 'normal' behaviour).
-
-- `SOPS: decrypt in-place`
-  - Decrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
-
-- `SOPS: encrypt in-place`
-  - Encrypts the selected file in-place (if it matches the any of the SOPS regex conditions).
 
 ### Settings 
 
@@ -69,7 +72,7 @@ This extension adds the following settings:
 - `Temp File Pre Extension`
   - Allows you to change the default `tmp` pre-extension to something different
 - `Only Use Buttons`
-  - Allows you to not have the auto-decrypt and encrypt done every time, but only use the right-mouse-menu buttons
+  - Allows you to not get the auto-decrypt and encrypt behaviour, but only use the decrypt/encrypt buttons instead
 
 
 ## Limitations
