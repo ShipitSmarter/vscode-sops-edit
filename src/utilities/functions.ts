@@ -21,41 +21,41 @@ type Answer = {
 };
 
 export function decryptCommand(files:vscode.Uri[]|vscode.Uri) : void {
-	const file = getSingleUriFromInput(files);
+	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
 
-	void decryptInPlace(file);
+	void _decryptInPlace(file);
 }
 
 export function encryptCommand(files:vscode.Uri[]|vscode.Uri) : void {
-	const file = getSingleUriFromInput(files);
+	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
 
-	void encryptInPlaceWithProgressBar(file);
+	void _encryptInPlaceWithProgressBar(file);
 }
 
-export function getParentUri(file:vscode.Uri) : vscode.Uri {
+function _getParentUri(file:vscode.Uri) : vscode.Uri {
 	return vscode.Uri.joinPath(file, '..');
 }
 
-export function dissectUri(file:vscode.Uri) : PathDetails {
+function _dissectUri(file:vscode.Uri) : PathDetails {
 	const fName = file.path.split('/').pop() ?? '';
 
 	return {
 		fileName: fName,
-		parent: getParentUri(file),
+		parent: _getParentUri(file),
 		filePureName: fName.replace(c.getFileExtensionRegExp, ''),
 		extension: fName.split('.').pop() ?? ''
 	};
 }
 
 export function getTempUri(file:vscode.Uri) : vscode.Uri {
-	const fd = dissectUri(file);
-	const tempFileName = `${fd.filePureName}.${getSettingTempFilePreExtension()}.${fd.extension}`;
+	const fd = _dissectUri(file);
+	const tempFileName = `${fd.filePureName}.${_getSettingTempFilePreExtension()}.${fd.extension}`;
 	return vscode.Uri.joinPath(fd.parent, tempFileName);
 }
 
@@ -68,7 +68,7 @@ export function gitFix(path:string) : string {
 	return path.replace(c.gitExtensionRegExp, '');
 }
 
-export function executeShellCommand(command:string, cwd:vscode.Uri, errorMessage:string) : Answer {
+function _executeShellCommand(command:string, cwd:vscode.Uri, errorMessage:string) : Answer {
 	let out = {stdout:'', stderr:''};
 	cp.exec(command, {cwd:cwd.fsPath}, (_, stdout, stderr) => {
 		out = {stdout:stdout, stderr:stderr};
@@ -79,7 +79,7 @@ export function executeShellCommand(command:string, cwd:vscode.Uri, errorMessage
 	return out;
 }
 
-export async function executeShellCommandWithProgressBar(command:string, cwd:vscode.Uri, progressTitle:string, errorMessage:string) : Promise<Answer> {
+async function _executeShellCommandWithProgressBar(command:string, cwd:vscode.Uri, progressTitle:string, errorMessage:string) : Promise<Answer> {
 	// run a shell command and show a moving progress bar in the mean time
 	let out:Answer = {stdout:'', stderr:''};
 	await vscode.window.withProgress(
@@ -99,7 +99,7 @@ export async function executeShellCommandWithProgressBar(command:string, cwd:vsc
 				return;
 			});
 			// update progress bar while not done
-			await fakeProgressUpdate(progress, progressDetails);			
+			await _fakeProgressUpdate(progress, progressDetails);			
 		}
 	);
 	if (out.stderr) {
@@ -112,7 +112,7 @@ export async function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
-export async function fakeProgressUpdate(progressBar:ProgressBar, executionStatus: { isDone:boolean }) : Promise<void> {
+async function _fakeProgressUpdate(progressBar:ProgressBar, executionStatus: { isDone:boolean }) : Promise<void> {
 	// add increments to given progressbar every 50 ms, until external execution is done
 	let rem = 100;
 	while(!executionStatus.isDone) {
@@ -126,7 +126,7 @@ export async function fakeProgressUpdate(progressBar:ProgressBar, executionStatu
 	return;
 }
 
-export function getSingleUriFromInput(input:vscode.Uri[]|vscode.Uri) : vscode.Uri|void {
+function _getSingleUriFromInput(input:vscode.Uri[]|vscode.Uri) : vscode.Uri|void {
 	let file:vscode.Uri;
 	if (Array.isArray(input)) {
 		if (input.length === 0) {
@@ -145,41 +145,41 @@ export function noFileSelectedErrormessage() : void {
 	void vscode.window.showErrorMessage('Cannot edit file directly: no file selected');
 }
 
-export async function decryptInPlace(encryptedFile:vscode.Uri) : Promise<Answer> {
-	const enc = dissectUri(encryptedFile);
+async function _decryptInPlace(encryptedFile:vscode.Uri) : Promise<Answer> {
+	const enc = _dissectUri(encryptedFile);
 	const decryptionCommand = c.decryptInPlaceCommand.replace(c.fileString, enc.fileName);
 	const progressTitle = `Decrypting ${enc.fileName} ...`;
 	const errorMessage = `Error decrypting ${enc.fileName}`;
-	return await executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
+	return await _executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
 }
 
 export async function decryptToTmpFile(encryptedFile:vscode.Uri, tempFile:vscode.Uri) : Promise<Answer> {
-	const enc = dissectUri(encryptedFile);
-	const temp = dissectUri(tempFile);
+	const enc = _dissectUri(encryptedFile);
+	const temp = _dissectUri(tempFile);
 	const decryptionCommand = c.decryptToTmpCommand.replace(c.fileString, enc.fileName).replace(c.tempFileString, temp.fileName);
 	const progressTitle = `Decrypting ${enc.fileName} ...`;
 	const errorMessage = `Error decrypting ${enc.fileName}`;
-	return await executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
+	return await _executeShellCommandWithProgressBar(decryptionCommand, enc.parent, progressTitle, errorMessage);
 }
 
 export function copyEncrypt(tempFile:vscode.Uri, originalFile:vscode.Uri) : Answer {
 	void fs.copyFileSync(tempFile.fsPath, originalFile.fsPath);
-	return encryptInPlace(originalFile);	
+	return _encryptInPlace(originalFile);	
 }
 
-export function encryptInPlace(file:vscode.Uri) : Answer {
-	const fileDetails = dissectUri(file);
+function _encryptInPlace(file:vscode.Uri) : Answer {
+	const fileDetails = _dissectUri(file);
 	const command = c.encryptCommand.replace(c.fileString, fileDetails.fileName);
 	const errorMessage = `Error encrypting ${fileDetails.fileName}`;
-	return executeShellCommand(command, fileDetails.parent, errorMessage);
+	return _executeShellCommand(command, fileDetails.parent, errorMessage);
 }
 
-export async function encryptInPlaceWithProgressBar(file:vscode.Uri): Promise<Answer> {
-	const fileDetails = dissectUri(file);
+async function _encryptInPlaceWithProgressBar(file:vscode.Uri): Promise<Answer> {
+	const fileDetails = _dissectUri(file);
 	const command = c.encryptCommand.replace(c.fileString, fileDetails.fileName);
 	const progressTitle = `Encrypting ${fileDetails.fileName} ...`;
 	const errorMessage = `Error encrypting ${fileDetails.fileName}`;
-	return await executeShellCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
+	return await _executeShellCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
 }
 
 export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
@@ -187,7 +187,7 @@ export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
 	// the .sops.yaml file location, and return if given file path matches any
 	const sopsFiles =  await vscode.workspace.findFiles(c.sopsYamlGlob);
 	for (const sf of sopsFiles) {
-		const pr: PatternSet = getSopsPatternsFromFile(sf);
+		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
 				return true;
@@ -197,7 +197,7 @@ export async function isSopsEncrypted(file:vscode.Uri) : Promise<boolean> {
 	return false;
 }
 
-export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
+function _getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	// open .sops.yaml file, extract path_regex patterns, combine with file location to return a PatternSet
 	const contentString: string = fs.readFileSync(sopsFile.fsPath, 'utf-8');
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -205,10 +205,10 @@ export function getSopsPatternsFromFile(sopsFile:vscode.Uri) : PatternSet {
 	
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
 	const fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
-	return [getParentUri(sopsFile).path, fileRegexes];
+	return [_getParentUri(sopsFile).path, fileRegexes];
 }
 
-export function getSettingTempFilePreExtension() : string {
+function _getSettingTempFilePreExtension() : string {
 	return vscode.workspace.getConfiguration().get<string>('sops-edit.tempFilePreExtension') ?? 'tmp';
 }
 
