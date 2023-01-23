@@ -1,13 +1,13 @@
-import * as vscode from "vscode";
-import * as f from "./functions";
+import { TextEditor, commands } from "vscode";
+import { isSopsEncrypted } from "./functions";
 
 export class EditorContext {
-    public static setContexts(editor:vscode.TextEditor|undefined) : void {
+    public static set(editor:TextEditor|undefined) : void {
         void this._setIsSopsEncrypted(editor);        
     }
 
-    private static async _setIsSopsEncrypted(editor:vscode.TextEditor|undefined) : Promise<void> {
-        const isSopsEncrypted = editor ? await f.isSopsEncrypted(editor.document.uri) : false;
-        void vscode.commands.executeCommand('setContext', 'sops-edit.isSopsEncrypted', isSopsEncrypted ); 
+    private static async _setIsSopsEncrypted(editor:TextEditor|undefined) : Promise<void> {
+        const isSopsEncryptedBool = editor ? await isSopsEncrypted(editor.document.uri) : false;
+        void commands.executeCommand('setContext', 'sops-edit.isSopsEncrypted', isSopsEncryptedBool ); 
     }
 }

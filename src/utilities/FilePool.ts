@@ -1,10 +1,10 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
+import { TextDocument, Uri } from "vscode";
+import { readFileSync, unlinkSync } from "fs";
 import * as f from "./functions";
 
 type ExtendedTempFile = {
-	tempFile: vscode.Uri,
-    originalFile: vscode.Uri,
+	tempFile: Uri,
+    originalFile: Uri,
 	content: string
 };
 
@@ -25,12 +25,12 @@ export class FilePool {
         this._tempFiles = [];
     }
 
-    public async openTextDocumentListener(textDocument:vscode.TextDocument) : Promise<void> {
+    public async openTextDocumentListener(textDocument:TextDocument) : Promise<void> {
         if (f.getSettingOnlyUseButtons()) {
             return;
         }
         // on open document: if it is a sops encrypted file: close and open a decrypted copy instead
-        const encryptedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
+        const encryptedFile = Uri.file(f.gitFix(textDocument.fileName));
     
         // only apply if this is a non-excluded sops encrypted file
         const isSopsEncryptedFile: boolean = await f.isSopsEncrypted(encryptedFile);
@@ -43,28 +43,28 @@ export class FilePool {
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     
-    public closeTextDocumentListener(textDocument:vscode.TextDocument) : void {
+    public closeTextDocumentListener(textDocument:TextDocument) : void {
         if (f.getSettingOnlyUseButtons()) {
             return;
         }
         // 	- remove document from excluded files (if present)
         // 	- if it is a tmp version of SOPS encrypted file: remove tempFiles entry, delete
-        const closedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
+        const closedFile = Uri.file(f.gitFix(textDocument.fileName));
         this._removeExcludedPathsEntry(closedFile.path);
         this._removeTempFilesEntryAndDelete(closedFile);
     }
     
-    public saveTextDocumentListener(textDocument:vscode.TextDocument) : void {
+    public saveTextDocumentListener(textDocument:TextDocument) : void {
         if (f.getSettingOnlyUseButtons()) {
             return;
         }
         // save and encrypt when it is a tmp file
-        const savedFile = vscode.Uri.file(f.gitFix(textDocument.fileName));
+        const savedFile = Uri.file(f.gitFix(textDocument.fileName));
         const content = textDocument.getText().trim();
         void this._copyEncryptSaveContentsIfTempFile(savedFile, content);
     }
 
-    public editDirectly(files:vscode.Uri[]) : void {
+    public editDirectly(files:Uri[]) : void {
         if (files.length === 0) {
             f.noFileSelectedErrormessage();
             return;
@@ -75,7 +75,7 @@ export class FilePool {
         void f.openFile(directEditFile);
     }
 
-    private async _editDecryptedTmpCopy(encryptedFile: vscode.Uri) : Promise<void> {
+    private async _editDecryptedTmpCopy(encryptedFile: Uri) : Promise<void> {
         const tempFile = f.getTempUri(encryptedFile);
     
         const index = this._getTempFileIndex(tempFile);
@@ -97,12 +97,12 @@ export class FilePool {
         }
 
         // update tempFiles entry with file content
-        this._tempFiles[this._getTempFileIndex(tempFile)].content = fs.readFileSync(tempFile.fsPath, 'utf-8');
+        this._tempFiles[this._getTempFileIndex(tempFile)].content = readFileSync(tempFile.fsPath, 'utf-8');
 
         await f.openFile(tempFile);
     }
 
-    private _addTempFilesEntry(tempFile: vscode.Uri, encryptedFile:vscode.Uri) : void {
+    private _addTempFilesEntry(tempFile: Uri, encryptedFile:Uri) : void {
         const index = this._getTempFileIndex(tempFile);
         if (index !== -1) {
             return;
@@ -115,14 +115,14 @@ export class FilePool {
         });
     }
 
-    private _removeTempFilesEntryAndDelete(tempFile:vscode.Uri) : void {
+    private _removeTempFilesEntryAndDelete(tempFile:Uri) : void {
         const index = this._getTempFileIndex(tempFile);
         if (index === -1) {
             return;
         }
 
         this._tempFiles.splice(index, 1);
-        fs.unlinkSync(tempFile.fsPath);
+        unlinkSync(tempFile.fsPath);
     }
 
     private _removeExcludedPathsEntry(path:string) {
@@ -131,7 +131,7 @@ export class FilePool {
         }
     }
 
-    private _copyEncryptSaveContentsIfTempFile(tempFile:vscode.Uri, tempFileContent: string) : void {
+    private _copyEncryptSaveContentsIfTempFile(tempFile:Uri, tempFileContent: string) : void {
         const index = this._getTempFileIndex(tempFile);
         if (index === -1 || this._tempFiles[index].content === tempFileContent) {
             return;
@@ -142,7 +142,7 @@ export class FilePool {
         void f.copyEncrypt(extTempFile.tempFile, extTempFile.originalFile);
     }
 
-    private _getTempFileIndex(tempFile:vscode.Uri) : number {
+    private _getTempFileIndex(tempFile:Uri) : number {
         return this._tempFiles.findIndex(t => t.tempFile.path === tempFile.path);
     }
 }
