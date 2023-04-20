@@ -190,17 +190,21 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
-				const fileSize = (await fspromises.stat(file.path)).size
+				const fileSize = (await fspromises.stat(file.path)).size;
 				if (fileSize > (1024 * 1024)) {
 					return false; // probably too big to care, too big to parse
 				}
 				const contentString: string = readFileSync(file.path, 'utf-8');
 				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				try {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 				const content = parse(contentString);
-				if (content.hasOwnProperty("sops")) {
+					if (Object.prototype.hasOwnProperty.call(content, "sops")) {
 				return true;
 				}
-
+				} catch (error) {
+					return false;
+				}
 			}
 		}
 	}
