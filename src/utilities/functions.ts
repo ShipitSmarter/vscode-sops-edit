@@ -1,5 +1,5 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
-import { readFileSync, copyFileSync } from "fs";
+import { readFileSync, copyFileSync, promises as fspromises } from "fs";
 import { parse } from "yaml";
 import { exec } from "node:child_process";
 import * as c from "./constants";
@@ -190,7 +190,17 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
+				const fileSize = (await fspromises.stat(file.path)).size
+				if (fileSize > (1024 * 1024)) {
+					return false; // probably too big to care, too big to parse
+				}
+				const contentString: string = readFileSync(file.path, 'utf-8');
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				const content = parse(contentString);
+				if (content.hasOwnProperty("sops")) {
 				return true;
+				}
+
 			}
 		}
 	}
