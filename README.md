@@ -74,11 +74,11 @@ This extension adds the following settings:
 - `Only Use Buttons`
   - Allows you to not get the auto-decrypt and encrypt behaviour, but only use the decrypt/encrypt buttons instead
 
-
 ## Limitations
 This extension has the following limitations:
 - Only SOPS config files named `.sops.yaml` are taken into account
 - The `SOPS: edit directly` button is only available to `yaml`/`yml`/`json`/`env`/`ini`/`txt` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
+- SOPS encryption is only checked for files smaller than **1MB**
 
 This extension does NOT do or help with any of the following:
 - Installation of SOPS
