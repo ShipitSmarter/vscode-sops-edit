@@ -198,11 +198,12 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 				try {
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-				const content = parse(contentString);
+					const content = parse(contentString);
 					if (Object.prototype.hasOwnProperty.call(content, "sops")) {
-				return true;
+					return true;
 				}
 				} catch (error) {
+					void window.showErrorMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
 					return false;
 				}
 			}
