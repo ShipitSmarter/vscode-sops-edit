@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.7
+- Extension will no longer close the editor tab when it's showing a GIT diff (solving [#7](https://github.com/ShipitSmarter/vscode-sops-edit/issues/7))
+
 ## 0.0.6
 - Extension will try to parse files that match the `.sops.yaml` regexes as `yaml`/`json`, and only consider as encrypted if parseable *and* contains `sops` property (solving [#5](https://github.com/ShipitSmarter/vscode-sops-edit/issues/5))
 

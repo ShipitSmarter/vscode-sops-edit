@@ -39,7 +39,11 @@ export class FilePool {
             return;
         }
 
-        await f.closeFileIfOpen(encryptedFile);
+        const isOpenInNonDiffEditor: boolean = await f.closeFileIfOpenInNonDiffEditor(encryptedFile);
+        if (!isOpenInNonDiffEditor) {
+            return;
+        }
+        
         await this._editDecryptedTmpCopy(encryptedFile);
     }
     

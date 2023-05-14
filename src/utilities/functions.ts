@@ -231,10 +231,11 @@ export function getSettingOnlyUseButtons() : boolean {
 	return workspace.getConfiguration().get<boolean>('sops-edit.onlyUseButtons') ?? false;
 }
 
-export async function closeFileIfOpen(file:Uri) : Promise<void> {
+export async function closeFileIfOpenInNonDiffEditor(file:Uri) : Promise<boolean> {
 	const tabs: Tab[] = window.tabGroups.all.map(tg => tg.tabs).flat();
 	const index = tabs.findIndex(tab => tab.input instanceof TabInputText && tab.input.uri.path === file.path);
 	if (index !== -1) {
 		await window.tabGroups.close(tabs[index]);
 	}
+	return index !== -1;
 }
