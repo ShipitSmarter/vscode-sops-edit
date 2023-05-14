@@ -203,7 +203,7 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 					return true;
 				}
 				} catch (error) {
-					void window.showErrorMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
+					void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
 					return false;
 				}
 			}

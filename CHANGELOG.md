@@ -1,5 +1,8 @@
 # Change Log
 
+## 0.0.6
+- Extension will try to parse files that match the `.sops.yaml` regexes as `yaml`/`json`, and only consider as encrypted if parseable *and* contains `sops` property (solving [#5](https://github.com/ShipitSmarter/vscode-sops-edit/issues/5))
+
 ## 0.0.5
 - Removed right-mouse-menu `decrypt in-place`, `encrypt in-place` buttons
 - Added top-right editor menu buttons `Decrypt` and `Encrypt` to all SOPS encrypted files
