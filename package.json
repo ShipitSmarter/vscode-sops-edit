@@ -2,7 +2,7 @@
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
   "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "ShipitSmarter",
   "author": {
     "name": "ShipitSmarter",
@@ -103,7 +103,7 @@
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "14.x",
-    "@types/vscode": "^1.74.0",
+    "@types/vscode": "^1.78.0",
     "@typescript-eslint/eslint-plugin": "^5.12.1",
     "@typescript-eslint/parser": "^5.12.1",
     "@vscode/test-electron": "^2.1.2",
@@ -123,6 +123,8 @@
   },
   "icon": "img/sops_easy_edit_logo.png",
   "dependencies": {
+    "@vscode/vsce": "^2.19.0",
+    "@types/vscode": "^1.78.0",
     "child_process": "^1.0.2",
     "fs": "^0.0.1-security",
     "yaml": "^2.2.2"

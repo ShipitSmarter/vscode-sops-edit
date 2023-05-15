@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.9
+- Fixed `Decrypt` and `Encrypt` button logic for multi document files
+- Force upgrade of vscode editor and dependencies
+
 ## 0.0.8
 - Updated `Decrypt` and `Encrypt` button logic
   - Editor will only show `Decrypt` button if file is encrypted, and `Encrypt` when matching `.sops.yaml` regexes but not encrypted

@@ -1,7 +1,7 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
 import { readFileSync, copyFileSync, promises as fspromises } from "fs";
 import { EditorContext } from './EditorContext';
-import { parse } from "yaml";
+import { parse, parseAllDocuments } from "yaml";
 import { exec } from "node:child_process";
 import * as c from "./constants";
 
@@ -200,22 +200,32 @@ export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
 
 export async function isEncryptableAndEncrypted(file:Uri) : Promise<boolean> {
 	// assume file is encryptable; in that case, check if it is encrypted
-	// by parsing as yaml and checking for sops property
+	// by parsing as yaml (or multidocument yaml) and checking for sops property
 	const fileSize = (await fspromises.stat(file.path)).size;
 	if (fileSize > (1024 * 1024)) {
 		return false; // probably too big to care, too big to parse
 	}
 
 	const contentString: string = readFileSync(file.path, 'utf-8');
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const content = parse(contentString);
 		if (Object.prototype.hasOwnProperty.call(content, "sops")) {
-		return true;
-	}
+			return true;
+		}
 	} catch (error) {
-		void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
+		try {
+			const documents = parseAllDocuments(contentString);
+			for (const doc of documents) {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				const content = parse(doc.toString());
+				if (Object.prototype.hasOwnProperty.call(content, "sops")) {
+					return true;
+				}
+			}
+		} catch (error) {
+			void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
+		}
 	}
 
 	return false;
