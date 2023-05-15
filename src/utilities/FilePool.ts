@@ -39,8 +39,8 @@ export class FilePool {
             return;
         }
 
-        const isOpenInNonDiffEditor: boolean = await f.closeFileIfOpenInNonDiffEditor(encryptedFile);
-        if (!isOpenInNonDiffEditor) {
+        const isOpenInPlainTextEditor: boolean = await f.isOpenedInPlainTextEditor(encryptedFile, true);
+        if (!isOpenInPlainTextEditor) {
             return;
         }
         

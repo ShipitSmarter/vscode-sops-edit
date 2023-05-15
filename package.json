@@ -2,7 +2,7 @@
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
   "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "ShipitSmarter",
   "author": {
     "name": "ShipitSmarter",
@@ -63,12 +63,12 @@
       ],
       "editor/title": [
 				{
-					"when": "sops-edit.isSopsEncrypted",
+					"when": "sops-edit.isEncrypted",
 					"command": "sops-edit.decrypt-editor",
 					"group": "navigation"
 				},
         {
-					"when": "sops-edit.isSopsEncrypted",
+					"when": "sops-edit.isEncryptable",
 					"command": "sops-edit.encrypt-editor",
 					"group": "navigation"
 				}
