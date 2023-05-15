@@ -201,12 +201,13 @@ export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
 export async function isEncryptableAndEncrypted(file:Uri) : Promise<boolean> {
 	// assume file is encryptable; in that case, check if it is encrypted
 	// by parsing as yaml (or multidocument yaml) and checking for sops property
-	const fileSize = (await fspromises.stat(file.path)).size;
+	const stats = await fspromises.stat(file.fsPath);
+	const fileSize = stats.size;
 	if (fileSize > (1024 * 1024)) {
 		return false; // probably too big to care, too big to parse
 	}
 
-	const contentString: string = readFileSync(file.path, 'utf-8');
+	const contentString: string = readFileSync(file.fsPath, 'utf-8');
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const content = parse(contentString);
