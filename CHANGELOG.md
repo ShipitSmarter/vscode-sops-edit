@@ -1,7 +1,7 @@
 # Change Log
 
 ## 0.0.10
-- Fixed issue [#10](https://github.com/ShipitSmarter/vscode-sops-edit/issues/13) where extension would not work properly for Windows users
+- Fixed issue [#13](https://github.com/ShipitSmarter/vscode-sops-edit/issues/13) where extension would not work properly for Windows users
 
 ## 0.0.9
 - Fixed `Decrypt` and `Encrypt` button logic for multi document files
