@@ -182,7 +182,7 @@ async function _encryptInPlaceWithProgressBar(file:Uri): Promise<Answer> {
 	return await _executeShellCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
 }
 
-export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
+export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
 	const sopsFiles =  await workspace.findFiles(c.sopsYamlGlob);
@@ -190,25 +190,37 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
 			if (new RegExp(`${pr[0]}/.*${re}`).test(file.path)) {
-				const fileSize = (await fspromises.stat(file.path)).size;
-				if (fileSize > (1024 * 1024)) {
-					return false; // probably too big to care, too big to parse
-				}
-				const contentString: string = readFileSync(file.path, 'utf-8');
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-				try {
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-					const content = parse(contentString);
-					if (Object.prototype.hasOwnProperty.call(content, "sops")) {
-					return true;
-				}
-				} catch (error) {
-					void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
-					return false;
-				}
+				return true;
 			}
 		}
 	}
+	return false;
+}
+
+export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
+	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
+	// and if so, parse as yaml and check if it has a sops: section
+	if (!await isSopsEncryptable(file)) {
+		return false;
+	}
+
+	const fileSize = (await fspromises.stat(file.path)).size;
+	if (fileSize > (1024 * 1024)) {
+		return false; // probably too big to care, too big to parse
+	}
+
+	const contentString: string = readFileSync(file.path, 'utf-8');
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const content = parse(contentString);
+		if (Object.prototype.hasOwnProperty.call(content, "sops")) {
+		return true;
+	}
+	} catch (error) {
+		void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
+	}
+
 	return false;
 }
 
@@ -231,10 +243,10 @@ export function getSettingOnlyUseButtons() : boolean {
 	return workspace.getConfiguration().get<boolean>('sops-edit.onlyUseButtons') ?? false;
 }
 
-export async function closeFileIfOpenInNonDiffEditor(file:Uri) : Promise<boolean> {
+export async function isOpenedInPlainTextEditor(file:Uri, closeIfOpened = false) : Promise<boolean> {
 	const tabs: Tab[] = window.tabGroups.all.map(tg => tg.tabs).flat();
 	const index = tabs.findIndex(tab => tab.input instanceof TabInputText && tab.input.uri.path === file.path);
-	if (index !== -1) {
+	if (index !== -1 && closeIfOpened) {
 		await window.tabGroups.close(tabs[index]);
 	}
 	return index !== -1;

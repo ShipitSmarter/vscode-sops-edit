@@ -63,12 +63,12 @@
       ],
       "editor/title": [
 				{
-					"when": "sops-edit.isSopsEncrypted",
+					"when": "sops-edit.isSopsEncryptable",
 					"command": "sops-edit.decrypt-editor",
 					"group": "navigation"
 				},
         {
-					"when": "sops-edit.isSopsEncrypted",
+					"when": "sops-edit.isSopsEncryptable",
 					"command": "sops-edit.encrypt-editor",
 					"group": "navigation"
 				}
