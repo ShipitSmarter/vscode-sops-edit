@@ -15,6 +15,12 @@ export class EditorContext {
         }
 
         const isSopsEncryptableBool = editor ? await isSopsEncryptable(editor.document.uri) : false;
+        if (!isSopsEncryptableBool) {
+            void this._setEncryptable(false);
+            void this._setEncrypted(false);
+            return;
+        }
+        
         const isEncryptableAndEncryptedBool = editor ? await isEncryptableAndEncrypted(editor.document.uri) : false;
         if (isSopsEncryptableBool) {
             if (isEncryptableAndEncryptedBool) {
