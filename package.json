@@ -2,7 +2,7 @@
   "name": "sops-edit",
   "displayName": "SOPS easy edit",
   "description": "Never again worry about encrypting, decrypting or accidentally committing decrypted files.",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "publisher": "ShipitSmarter",
   "author": {
     "name": "ShipitSmarter",
