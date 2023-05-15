@@ -1,5 +1,6 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
 import { readFileSync, copyFileSync, promises as fspromises } from "fs";
+import { EditorContext } from './EditorContext';
 import { parse } from "yaml";
 import { exec } from "node:child_process";
 import * as c from "./constants";
@@ -25,8 +26,8 @@ export function decryptCommand(files:Uri[]|Uri) : void {
 	if (!file) {
 		return;
 	}
+	void _decryptInPlace(file).then(() => EditorContext.set(window.activeTextEditor));
 
-	void _decryptInPlace(file);
 }
 
 export function encryptCommand(files:Uri[]|Uri) : void {
@@ -35,7 +36,7 @@ export function encryptCommand(files:Uri[]|Uri) : void {
 		return;
 	}
 
-	void _encryptInPlaceWithProgressBar(file);
+	void _encryptInPlaceWithProgressBar(file).then(() => EditorContext.set(window.activeTextEditor));
 }
 
 function _getParentUri(file:Uri) : Uri {
@@ -197,13 +198,9 @@ export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
 	return false;
 }
 
-export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
-	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
-	// and if so, parse as yaml and check if it has a sops: section
-	if (!await isSopsEncryptable(file)) {
-		return false;
-	}
-
+export async function isEncryptableAndEncrypted(file:Uri) : Promise<boolean> {
+	// assume file is encryptable; in that case, check if it is encrypted
+	// by parsing as yaml and checking for sops property
 	const fileSize = (await fspromises.stat(file.path)).size;
 	if (fileSize > (1024 * 1024)) {
 		return false; // probably too big to care, too big to parse
@@ -222,6 +219,16 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 	}
 
 	return false;
+}
+
+export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
+	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
+	// and if so, parse as yaml and check if it has a sops property
+	if (!await isSopsEncryptable(file)) {
+		return false;
+	}
+
+	return await isEncryptableAndEncrypted(file);
 }
 
 function _getSopsPatternsFromFile(sopsFile:Uri) : PatternSet {
