@@ -46,11 +46,13 @@ This extension adds the following event listeners:
 
 ![Decrypt encrypt](https://raw.githubusercontent.com/shipitsmarter/vscode-sops-edit/main/img/editor_decrypt_encrypt.png)
 
-This extension adds the following buttons to the top-right editor menu of every SOPS encrypted file `*`:
+This extension adds the following buttons to the top-right editor menu of every SOPS encrypted or *encryptable* file `*`:
 - `Decrypt`
   - Decrypts the file in-place
+  - Only shown when file is SOPS encrypted
 - `Encrypt`
   - Encrypts the file in-place
+  - Only shown when file is *encryptable* but not actually encrypted
 
 
 `*` I.e., any file that satisfies any of the combinations of `.sops.yaml` file paths and their `path_regex` conditions.

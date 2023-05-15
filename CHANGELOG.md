@@ -1,5 +1,10 @@
 # Change Log
 
+## 0.0.8
+- Updated `Decrypt` and `Encrypt` button logic
+  - Editor will only show `Decrypt` button if file is encrypted, and `Encrypt` when matching `.sops.yaml` regexes but not encrypted
+  - Editor will not show `Decrypt` or `Encrypt` buttons when it's showing a GIT diff
+
 ## 0.0.7
 - Extension will no longer close the editor tab when it's showing a GIT diff (solving [#7](https://github.com/ShipitSmarter/vscode-sops-edit/issues/7))
 
