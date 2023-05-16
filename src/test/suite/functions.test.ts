@@ -78,29 +78,33 @@ suite('functions', () => {
             test ('should detect all encrypted', () => {
                 const encrypted = ['encrypted.env', 'encrypted.ini', 'encrypted_multi.yaml', 'encrypted.yaml', 'encrypted.json', 'encrypted.txt'];
                 for (const file of encrypted) {
-                    const fileUri = vscode.Uri.file(getFixtureUri(file));
-                    assert.strictEqual(functions.isEncrypted(fileUri), true);
+                    assert.strictEqual(functions.isEncrypted(getFixtureUri(file)), true);
                 }
             });
     
             test ('should detect all unencrypted', () => {
                 const unencrypted = ['unencrypted.env', 'unencrypted.ini', 'unencrypted_multi.yaml', 'unencrypted.yaml', 'unencrypted.json', 'unencrypted.txt'];
                 for (const file of unencrypted) {
-                    const fileUri = vscode.Uri.file(getFixtureUri(file));
-                    assert.strictEqual(functions.isEncrypted(fileUri), false);
+                    assert.strictEqual(functions.isEncrypted(getFixtureUri(file)), false);
                 }
             });
     
         });
     });
 
-    suite('getUriFileExtension', () => {
-        test('should detect file extension', () => {
-            const file = vscode.Uri.file('a/b/c.txt');
-            assert.strictEqual(functions.getUriFileExtension(file), "txt");            
+    suite('other', () => {
+        suite('getUriFileExtension', () => {
+            test('should detect file extension', () => {
+                const file = vscode.Uri.file('a/b/c.txt');
+                assert.strictEqual(functions.getUriFileExtension(file), "txt");            
+            });
         });
-        test('test failing test', () => {
-            assert.strictEqual(true, false);
+
+        suite('getTempUri', () => {
+            test('should add .tmp pre-extension', () => {
+                const file = vscode.Uri.file('a/b/c.txt');
+                assert.strictEqual(functions.getTempUri(file).path, '/a/b/c.tmp.txt');            
+            });
         });
     });
 });
