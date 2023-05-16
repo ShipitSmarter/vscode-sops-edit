@@ -1,0 +1,23 @@
+{
+	"data": "} @#$AaVNAEOI",
+	"sops": {
+		"kms": null,
+		"gcp_kms": null,
+		"azure_kv": [
+			{
+				"vault_url": "https://bla.vault.azure.net",
+				"name": "abcdefg",
+				"version": "5fb04985179143c880fd7e03d7e41e33",
+				"created_at": "2023-05-16T14:37:01Z",
+				"enc": "2XvAGJG6WaaRkIvL0SdoxpTV4MO-d6uPkL_Pbo_iWl3GWRElOJpHJJCSIwWZ3fZaQQvEUl-EdHQowt1aYvSmEOWi5SMUSw-63LITVRvP58lc8_eWJQwMDD2Nnw7BSLJHZkxeShObFuzRaQWKk-BOcwbNz-B6HwhZaNvwdRnvbU_BLG7VkvjP29lAhUOC5ewxku6oMxFyaSqXIW-8LCEj8HW5RQWGxtPGxwMEJeT5jn4LAYStiQO2RKwOepGjyrzmYNQeIVg1UI7iN7GpukvvPrXZaHUFt19-T6MojhcQ1ZnrSAuzUN48FDQr6hoPCrazFaAo8PbIC89GyIF345FiCw"
+			}
+		],
+		"hc_vault": null,
+		"age": null,
+		"lastmodified": "2023-05-16T14:37:02Z",
+		"mac": "ENC[AES256_GCM,data:130+R5SeIwfaiiLuWZAJy0yM1pFtSTvLUxaA1c60fihSITwCe9Le+AuD1mAnqQv1zXuVadgJIgaNtrTSG5pA97uRMAdHiQR4mTeiA99PzI9V2tD7U31OXiSznuwQi6Jgx5ma8Fo2xFYMEGTciZh6GF9GNCHeGT8SioVTRvxovVI=,iv:JkcNJ9QYUXopfgopKiY2LGSt3Hh1mXXQuefIZ6O/eJg=,tag:hKayiSjAu6s0wf/vr2qXgg==,type:str]",
+		"pgp": null,
+		"encrypted_regex": ".*(PrivateKey|password|_secret|token)",
+		"version": "3.7.3"
+	}
+}

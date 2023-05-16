@@ -61,7 +61,28 @@ suite('functions', () => {
             const contentString = await Promise.resolve(loadFixture('unencrypted.json'));
             assert.strictEqual(functions.isEncryptedYamlFile(contentString), false);
         });
+
+        test ('should detect encrypted binary', async () => {
+            const contentString = await Promise.resolve(loadFixture('encrypted.txt'));
+            assert.strictEqual(functions.isEncryptedYamlFile(contentString), true);
+        });
+
+        test ('should detect unencrypted binary', async () => {
+            const contentString = await Promise.resolve(loadFixture('unencrypted.txt'));
+            assert.strictEqual(functions.isEncryptedYamlFile(contentString), false);
+        });
     });
+
+    // suite('isEncrypted', () => {
+    //     test ('should detect all encrypted', () => {
+    //         const encrypted = ['encrypted.env', 'encrypted.ini', 'encrypted_multi.yaml', 'encrypted.yaml', 'encrypted.json', 'encrypted.txt'];
+    //         for (const file of encrypted) {
+    //             const fileUri = vscode.Uri.file(`../../../src/test/fixtures/${file}`);
+    //             assert.strictEqual(functions.isEncrypted(fileUri), true);
+    //         }
+    //     });
+
+    // });
 
     suite('getUriFileExtension', () => {
         test('should detect file extension', () => {

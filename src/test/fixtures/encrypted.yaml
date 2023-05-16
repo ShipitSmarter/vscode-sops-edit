@@ -5,8 +5,8 @@ sops:
     kms: []
     gcp_kms: []
     azure_kv:
-        - vault_url: https://kv-viya-sops-test.vault.azure.net
-          name: repo-KubernetesConfig
+        - vault_url: https://bla.vault.azure.net
+          name: abcdefg
           version: 5fb04985179143c880fd7e03d7e41e33
           created_at: "2023-05-16T14:17:49Z"
           enc: GE4zHUv2zXMSsDqUBY4LXrtADIOlduPgRf1EtpHdzf6FexUXthW43qOhAHeJbMv_VhBCL2UdzIFfFTOWs8cfX_j5m4R2GDaPnhk2lbozrK-n32d2XJiZ8yOCHTwfBPYeOdqkuVEdXqGJcx__bILCy40zadzo1Fnbwq2cMcopVoHuo2wmR0Wg-3qBKFXmfwL29yKbK_bxz-vbAMDRLbFpCBM22tcDId7So5BFoDIU8twk9GZdWc9-3pxtuE-CiumqSBA93RCz1ZO5J_ZKBTHyFTkBFPF99_J03XJMCTIHTYX-lJifjspZHRts3xBO-2_hg3n9wd_d5mKxS6SMwh5y8Q
