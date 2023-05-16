@@ -1,4 +1,4 @@
-import { loadFixture } from '../testHelpers';
+import { getFixtureUri, loadFixture } from '../testHelpers';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as functions from '../../utilities/functions';
@@ -73,16 +73,24 @@ suite('functions', () => {
         });
     });
 
-    // suite('isEncrypted', () => {
-    //     test ('should detect all encrypted', () => {
-    //         const encrypted = ['encrypted.env', 'encrypted.ini', 'encrypted_multi.yaml', 'encrypted.yaml', 'encrypted.json', 'encrypted.txt'];
-    //         for (const file of encrypted) {
-    //             const fileUri = vscode.Uri.file(`../../../src/test/fixtures/${file}`);
-    //             assert.strictEqual(functions.isEncrypted(fileUri), true);
-    //         }
-    //     });
+    suite('isEncrypted', () => {
+        test ('should detect all encrypted', () => {
+            const encrypted = ['encrypted.env', 'encrypted.ini', 'encrypted_multi.yaml', 'encrypted.yaml', 'encrypted.json', 'encrypted.txt'];
+            for (const file of encrypted) {
+                const fileUri = vscode.Uri.file(getFixtureUri(file));
+                assert.strictEqual(functions.isEncrypted(fileUri), true);
+            }
+        });
 
-    // });
+        test ('should detect all unencrypted', () => {
+            const unencrypted = ['unencrypted.env', 'unencrypted.ini', 'unencrypted_multi.yaml', 'unencrypted.yaml', 'unencrypted.json', 'unencrypted.txt'];
+            for (const file of unencrypted) {
+                const fileUri = vscode.Uri.file(getFixtureUri(file));
+                assert.strictEqual(functions.isEncrypted(fileUri), false);
+            }
+        });
+
+    });
 
     suite('getUriFileExtension', () => {
         test('should detect file extension', () => {
