@@ -79,6 +79,10 @@ export class FilePool {
         void f.openFile(directEditFile);
     }
 
+    public containsTempFile(tempFile:Uri) : boolean {
+        return this._getTempFileIndex(tempFile) !== -1;
+    }
+
     private async _editDecryptedTmpCopy(encryptedFile: Uri) : Promise<void> {
         const tempFile = f.getTempUri(encryptedFile);
     

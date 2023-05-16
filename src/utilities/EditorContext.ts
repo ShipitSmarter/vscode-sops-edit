@@ -1,12 +1,20 @@
 import { TextEditor, commands } from "vscode";
 import { isOpenedInPlainTextEditor, isEncryptable, isEncrypted, isTooLargeToConsider} from "./functions";
+import { FilePool } from "./FilePool";
 
 export class EditorContext {
-    public static set(editor:TextEditor|undefined) : void {
-        void this._setAsync(editor);
+    public static set(editor:TextEditor|undefined, filePool: FilePool) : void {
+        void this._setAsync(editor, filePool);
     }
 
-    private static async _setAsync(editor:TextEditor|undefined) : Promise<void> {
+    private static async _setAsync(editor:TextEditor|undefined, filePool: FilePool) : Promise<void> {
+        const isOpenTmpFileBool = editor ?  filePool.containsTempFile(editor.document.uri) : false;
+        if (isOpenTmpFileBool) {
+            void this._setEncryptable(false);
+            void this._setEncrypted(false);
+            return;
+        }
+
         const isOpenedInPlainTextEditorBool = editor ? await isOpenedInPlainTextEditor(editor.document.uri) : false;
         if (!isOpenedInPlainTextEditorBool) {
             void this._setEncryptable(false);

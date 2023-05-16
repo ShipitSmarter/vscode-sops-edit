@@ -1,6 +1,7 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
 import { readFileSync, copyFileSync, promises as fspromises } from "fs";
 import { EditorContext } from './EditorContext';
+import { FilePool } from "./FilePool";
 import { parse as yamlParse, parseAllDocuments as yamlParseAllDocuments } from "yaml";
 import {parse as iniParse} from 'ini';
 import { exec } from "node:child_process";
@@ -22,22 +23,22 @@ type Answer = {
 	stderr:string
 };
 
-export function decryptCommand(files:Uri[]|Uri) : void {
+export function decryptCommand(files:Uri[]|Uri, filePool: FilePool) : void {
 	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
-	void _decryptInPlace(file).then(() => EditorContext.set(window.activeTextEditor));
+	void _decryptInPlace(file).then(() => EditorContext.set(window.activeTextEditor, filePool));
 
 }
 
-export function encryptCommand(files:Uri[]|Uri) : void {
+export function encryptCommand(files:Uri[]|Uri, filePool: FilePool) : void {
 	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
 
-	void _encryptInPlaceWithProgressBar(file).then(() => EditorContext.set(window.activeTextEditor));
+	void _encryptInPlaceWithProgressBar(file).then(() => EditorContext.set(window.activeTextEditor, filePool));
 }
 
 function _getParentUri(file:Uri) : Uri {
@@ -215,7 +216,7 @@ export async function isEncryptable(file:Uri) : Promise<boolean> {
 }
 
 export function isEncrypted(file:Uri) : boolean {
-	// check if file is encrypted by parsing as yaml (or multidocument yaml) and checking for sops property
+	// check if file is encrypted by parsing as ini, env or yaml and checking for sops property
 	const contentString: string = readFileSync(file.fsPath, 'utf-8');
 	const extension = _getUriFileExtension(file);
 
@@ -230,7 +231,7 @@ export function isEncrypted(file:Uri) : boolean {
 
 export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
-	// and if so, parse as yaml and check if it has a sops property
+	// and if so, check if it is indeed encrypted
 	if (!await isEncryptable(file)) {
 		return false;
 	}
