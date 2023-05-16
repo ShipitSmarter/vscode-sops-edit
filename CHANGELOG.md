@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.0.11
+- Fixed file encryption detection for `.env` and `.ini` files (solves [#15](https://github.com/ShipitSmarter/vscode-sops-edit/issues/15))
+- Fixed editor showing `encrypt` button for decrypted `tmp` files
+
 ## 0.0.10
 - Fixed issue [#13](https://github.com/ShipitSmarter/vscode-sops-edit/issues/13) where extension would not work properly for Windows users
 

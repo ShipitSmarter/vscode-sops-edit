@@ -89,7 +89,7 @@ This extension does NOT do or help with any of the following:
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
-- [NodeJs](https://nodejs.org/en/)'s:
-  - [File System API](https://nodejs.org/api/fs.html)
-  - [Child process](https://nodejs.org/api/child_process.html)
+- [File System API](https://nodejs.org/api/fs.html)
+- [Child process](https://nodejs.org/api/child_process.html)
+- [ini](https://www.npmjs.com/package/ini)
 - [eemeli](https://www.npmjs.com/~eemeli)'s excellent [yaml](https://www.npmjs.com/package/yaml) package
