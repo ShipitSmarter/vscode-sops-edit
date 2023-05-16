@@ -1,44 +1,39 @@
 import { TextEditor, commands } from "vscode";
-import { isOpenedInPlainTextEditor, isSopsEncryptable, isEncryptableAndEncrypted} from "./functions";
+import { isOpenedInPlainTextEditor, isEncryptable, isEncrypted, isTooLargeToConsider} from "./functions";
+import { FilePool } from "./FilePool";
 
 export class EditorContext {
-    public static set(editor:TextEditor|undefined) : void {
-        void this._setAsync(editor);
+    public static set(editor:TextEditor|undefined, filePool: FilePool) : void {
+        if (editor === undefined || editor === null) {
+            this._setButtons(false, false);
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        void this._setAsync(editor!, filePool);
     }
 
-    private static async _setAsync(editor:TextEditor|undefined) : Promise<void> {
-        const isOpenedInPlainTextEditorBool = editor ? await isOpenedInPlainTextEditor(editor.document.uri) : false;
-        if (!isOpenedInPlainTextEditorBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
+    private static async _setAsync(editor:TextEditor, filePool: FilePool) : Promise<void> {
+        if (
+            filePool.containsTempFile(editor.document.uri) ||
+            (!await isOpenedInPlainTextEditor(editor.document.uri)) ||
+            await isTooLargeToConsider(editor.document.uri) ||
+            (!await isEncryptable(editor.document.uri))
+        ) {
+            this._setButtons(false, false);
             return;
         }
 
-        const isSopsEncryptableBool = editor ? await isSopsEncryptable(editor.document.uri) : false;
-        if (!isSopsEncryptableBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
+        if (isEncrypted(editor.document.uri)) {
+            this._setButtons(false, true);
             return;
-        }
-        
-        const isEncryptableAndEncryptedBool = editor ? await isEncryptableAndEncrypted(editor.document.uri) : false;
-        if (isSopsEncryptableBool) {
-            if (isEncryptableAndEncryptedBool) {
-                void this._setEncryptable(false);
-                void this._setEncrypted(true);
-                return;
-            } else {
-                void this._setEncryptable(true);
-                void this._setEncrypted(false);
-                return;
-            }
+        } else {
+            this._setButtons(true, false);
+            return;
         }
     }
 
-    private static _setEncryptable(value:boolean) : void {
-        void commands.executeCommand('setContext', 'sops-edit.isEncryptable', value ); 
-    }
-    private static _setEncrypted(value:boolean) : void {
-        void commands.executeCommand('setContext', 'sops-edit.isEncrypted', value );
+    private static _setButtons(encrypt:boolean, decrypt:boolean) {
+        void commands.executeCommand('setContext', 'sops-edit.isEncryptable', encrypt ); 
+        void commands.executeCommand('setContext', 'sops-edit.isEncrypted', decrypt );
     }
 }

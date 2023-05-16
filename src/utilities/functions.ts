@@ -1,7 +1,9 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
 import { readFileSync, copyFileSync, promises as fspromises } from "fs";
 import { EditorContext } from './EditorContext';
-import { parse, parseAllDocuments } from "yaml";
+import { FilePool } from "./FilePool";
+import { parse as yamlParse, parseAllDocuments as yamlParseAllDocuments } from "yaml";
+import {parse as iniParse} from 'ini';
 import { exec } from "node:child_process";
 import * as c from "./constants";
 
@@ -21,22 +23,22 @@ type Answer = {
 	stderr:string
 };
 
-export function decryptCommand(files:Uri[]|Uri) : void {
+export function decryptCommand(files:Uri[]|Uri, filePool: FilePool) : void {
 	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
-	void _decryptInPlace(file).then(() => EditorContext.set(window.activeTextEditor));
+	void _decryptInPlace(file).then(() => EditorContext.set(window.activeTextEditor, filePool));
 
 }
 
-export function encryptCommand(files:Uri[]|Uri) : void {
+export function encryptCommand(files:Uri[]|Uri, filePool: FilePool) : void {
 	const file = _getSingleUriFromInput(files);
 	if (!file) {
 		return;
 	}
 
-	void _encryptInPlaceWithProgressBar(file).then(() => EditorContext.set(window.activeTextEditor));
+	void _encryptInPlaceWithProgressBar(file).then(() => EditorContext.set(window.activeTextEditor, filePool));
 }
 
 function _getParentUri(file:Uri) : Uri {
@@ -109,7 +111,7 @@ async function _executeShellCommandWithProgressBar(command:string, cwd:Uri, prog
 	return out;
 }
 
-export async function delay(ms: number) {
+async function _delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
 }
 
@@ -117,7 +119,7 @@ async function _fakeProgressUpdate(progressBar:ProgressBar, executionStatus: { i
 	// add increments to given progressbar every 50 ms, until external execution is done
 	let rem = 100;
 	while(!executionStatus.isDone) {
-		await delay(50);
+		await _delay(50);
 		const inc = Math.max(Math.floor(rem/20), 1);
 		rem -= inc;
 		if (rem > 0) {
@@ -183,7 +185,22 @@ async function _encryptInPlaceWithProgressBar(file:Uri): Promise<Answer> {
 	return await _executeShellCommandWithProgressBar(command, fileDetails.parent, progressTitle, errorMessage);
 }
 
-export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
+export async function isOpenedInPlainTextEditor(file:Uri, closeIfOpened = false) : Promise<boolean> {
+	const tabs: Tab[] = window.tabGroups.all.map(tg => tg.tabs).flat();
+	const index = tabs.findIndex(tab => tab.input instanceof TabInputText && tab.input.uri.path === file.path);
+	if (index !== -1 && closeIfOpened) {
+		await window.tabGroups.close(tabs[index]);
+	}
+	return index !== -1;
+}
+
+export async function isTooLargeToConsider(file:Uri) : Promise<boolean> {
+	const stats = await fspromises.stat(file.fsPath);
+	const fileSize = stats.size;
+	return fileSize > (1024 * 1024);
+}
+
+export async function isEncryptable(file:Uri) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
 	const sopsFiles =  await workspace.findFiles(c.sopsYamlGlob);
@@ -198,55 +215,77 @@ export async function isSopsEncryptable(file:Uri) : Promise<boolean> {
 	return false;
 }
 
-export async function isEncryptableAndEncrypted(file:Uri) : Promise<boolean> {
-	// assume file is encryptable; in that case, check if it is encrypted
-	// by parsing as yaml (or multidocument yaml) and checking for sops property
-	const stats = await fspromises.stat(file.fsPath);
-	const fileSize = stats.size;
-	if (fileSize > (1024 * 1024)) {
-		return false; // probably too big to care, too big to parse
-	}
-
+export function isEncrypted(file:Uri) : boolean {
+	// check if file is encrypted by parsing as ini, env or yaml and checking for sops property
 	const contentString: string = readFileSync(file.fsPath, 'utf-8');
-	try {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const content = parse(contentString);
-		if (Object.prototype.hasOwnProperty.call(content, "sops")) {
-			return true;
-		}
-	} catch (error) {
-		try {
-			const documents = parseAllDocuments(contentString);
-			for (const doc of documents) {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-				const content = parse(doc.toString());
-				if (Object.prototype.hasOwnProperty.call(content, "sops")) {
-					return true;
-				}
-			}
-		} catch (error) {
-			void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
-		}
-	}
+	const extension = _getUriFileExtension(file);
 
-	return false;
+	if (extension === 'ini') {
+		return _isEncryptedIniFile(contentString);
+	} else if (extension === 'env') {
+		return _isEncryptedEnvFile(contentString);
+	}
+		
+	return _isEncryptedYamlFile(contentString);
 }
 
 export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
-	// and if so, parse as yaml and check if it has a sops property
-	if (!await isSopsEncryptable(file)) {
+	// and if so, check if it is indeed encrypted
+	if (!await isEncryptable(file)) {
 		return false;
 	}
 
-	return await isEncryptableAndEncrypted(file);
+	if (await isTooLargeToConsider(file)) {
+		return false;
+	}
+
+	return isEncrypted(file);
+}
+
+function _isEncryptedYamlFile(contentString:string) : boolean {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const content = yamlParse(contentString);
+		return Object.prototype.hasOwnProperty.call(content, "sops");
+	} catch (error) {
+		try {
+			const documents = yamlParseAllDocuments(contentString);
+			for (const doc of documents) {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				const content = yamlParse(doc.toString());
+				return Object.prototype.hasOwnProperty.call(content, "sops");
+			}
+		} catch (error) {
+			return false;
+		}
+	}
+	return false;
+}
+
+function _isEncryptedEnvFile(contentString: string) : boolean {
+	return contentString.match(/(^|\r?\n)sops_version=/) !== null;
+}
+
+function _isEncryptedIniFile(contentString:string) : boolean {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+		const content = iniParse(contentString);
+		return Object.prototype.hasOwnProperty.call(content, "sops");
+	} catch (error) {
+		return false;
+	}
+}
+
+function _getUriFileExtension(file:Uri) : string {
+	return file.path.split('.').pop() ?? '';
 }
 
 function _getSopsPatternsFromFile(sopsFile:Uri) : PatternSet {
 	// open .sops.yaml file, extract path_regex patterns, combine with file location to return a PatternSet
 	const contentString: string = readFileSync(sopsFile.fsPath, 'utf-8');
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-	const content = parse(contentString);
+	const content = yamlParse(contentString);
 	
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
 	const fileRegexes: string[] = content.creation_rules.map((cr:any) => cr.path_regex);
@@ -259,13 +298,4 @@ function _getSettingTempFilePreExtension() : string {
 
 export function getSettingOnlyUseButtons() : boolean {
 	return workspace.getConfiguration().get<boolean>('sops-edit.onlyUseButtons') ?? false;
-}
-
-export async function isOpenedInPlainTextEditor(file:Uri, closeIfOpened = false) : Promise<boolean> {
-	const tabs: Tab[] = window.tabGroups.all.map(tg => tg.tabs).flat();
-	const index = tabs.findIndex(tab => tab.input instanceof TabInputText && tab.input.uri.path === file.path);
-	if (index !== -1 && closeIfOpened) {
-		await window.tabGroups.close(tabs[index]);
-	}
-	return index !== -1;
 }

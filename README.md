@@ -81,6 +81,7 @@ This extension has the following limitations:
 - Only SOPS config files named `.sops.yaml` are taken into account
 - The `SOPS: edit directly` button is only available to `yaml`/`yml`/`json`/`env`/`ini`/`txt` files. Other SOPS encrypted files are rendered impossible to be edited directly by installing this extension.
 - SOPS encryption is only checked for files smaller than **1MB**
+  - Encrypted or encryptable files larger than this will be completely ignored by this extension
 
 This extension does NOT do or help with any of the following:
 - Installation of SOPS
@@ -89,7 +90,7 @@ This extension does NOT do or help with any of the following:
 
 ## Dependencies
 This extension happily makes use of the following outstanding `npm` packages:
-- [NodeJs](https://nodejs.org/en/)'s:
-  - [File System API](https://nodejs.org/api/fs.html)
-  - [Child process](https://nodejs.org/api/child_process.html)
+- [File System API](https://nodejs.org/api/fs.html)
+- [Child process](https://nodejs.org/api/child_process.html)
+- [ini](https://www.npmjs.com/package/ini)
 - [eemeli](https://www.npmjs.com/~eemeli)'s excellent [yaml](https://www.npmjs.com/package/yaml) package
