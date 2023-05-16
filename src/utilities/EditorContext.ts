@@ -4,56 +4,36 @@ import { FilePool } from "./FilePool";
 
 export class EditorContext {
     public static set(editor:TextEditor|undefined, filePool: FilePool) : void {
-        void this._setAsync(editor, filePool);
+        if (editor === undefined || editor === null) {
+            this._setButtons(false, false);
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        void this._setAsync(editor!, filePool);
     }
 
-    private static async _setAsync(editor:TextEditor|undefined, filePool: FilePool) : Promise<void> {
-        const isOpenTmpFileBool = editor ?  filePool.containsTempFile(editor.document.uri) : false;
-        if (isOpenTmpFileBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
+    private static async _setAsync(editor:TextEditor, filePool: FilePool) : Promise<void> {
+        if (
+            filePool.containsTempFile(editor.document.uri) ||
+            (!await isOpenedInPlainTextEditor(editor.document.uri)) ||
+            await isTooLargeToConsider(editor.document.uri) ||
+            (!await isEncryptable(editor.document.uri))
+        ) {
+            this._setButtons(false, false);
             return;
         }
 
-        const isOpenedInPlainTextEditorBool = editor ? await isOpenedInPlainTextEditor(editor.document.uri) : false;
-        if (!isOpenedInPlainTextEditorBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
+        if (isEncrypted(editor.document.uri)) {
+            this._setButtons(false, true);
             return;
-        }
-
-        const isTooLargeToConsiderBool = editor ? await isTooLargeToConsider(editor.document.uri) : false;
-        if (isTooLargeToConsiderBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
+        } else {
+            this._setButtons(true, false);
             return;
-        }
-
-        const isEncryptableBool = editor ? await isEncryptable(editor.document.uri) : false;
-        if (!isEncryptableBool) {
-            void this._setEncryptable(false);
-            void this._setEncrypted(false);
-            return;
-        }
-        
-        const isEncryptedBool = editor ? isEncrypted(editor.document.uri) : false;
-        if (isEncryptableBool) {
-            if (isEncryptedBool) {
-                void this._setEncryptable(false);
-                void this._setEncrypted(true);
-                return;
-            } else {
-                void this._setEncryptable(true);
-                void this._setEncrypted(false);
-                return;
-            }
         }
     }
 
-    private static _setEncryptable(value:boolean) : void {
-        void commands.executeCommand('setContext', 'sops-edit.isEncryptable', value ); 
-    }
-    private static _setEncrypted(value:boolean) : void {
-        void commands.executeCommand('setContext', 'sops-edit.isEncrypted', value );
+    private static _setButtons(encrypt:boolean, decrypt:boolean) {
+        void commands.executeCommand('setContext', 'sops-edit.isEncryptable', encrypt ); 
+        void commands.executeCommand('setContext', 'sops-edit.isEncrypted', decrypt );
     }
 }
