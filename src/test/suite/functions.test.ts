@@ -11,6 +11,11 @@ suite('functions', () => {
             assert.strictEqual(functions.isEncryptedEnvFile(contentString), true);
         });
 
+        test ('should detect unencrypted', async () => {
+            const contentString = await Promise.resolve(loadFixture('unencrypted.env'));
+            assert.strictEqual(functions.isEncryptedEnvFile(contentString), false);
+        });
+
     });
 
     suite('getUriFileExtension', () => {
