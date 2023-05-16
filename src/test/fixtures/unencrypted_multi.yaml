@@ -1,0 +1,8 @@
+test:
+  - password: 123456
+    username: admin
+---
+bla:
+  - piet:
+      password: 123456
+      username: admin

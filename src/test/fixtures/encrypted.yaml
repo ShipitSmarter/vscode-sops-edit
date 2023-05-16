@@ -1,0 +1,19 @@
+test:
+    - password: ENC[AES256_GCM,data:T0ky6++X,iv:QjBo9dW9pPT+3JT3ucfs7OCzlQX9LZq4CFXzcIMkFj0=,tag:eMUbYTRKQxB2R3jXsnojwA==,type:int]
+      username: admin
+sops:
+    kms: []
+    gcp_kms: []
+    azure_kv:
+        - vault_url: https://bla.vault.azure.net
+          name: abcdefg
+          version: 5fb04985179143c880fd7e03d7e41e33
+          created_at: "2023-05-16T14:17:49Z"
+          enc: GE4zHUv2zXMSsDqUBY4LXrtADIOlduPgRf1EtpHdzf6FexUXthW43qOhAHeJbMv_VhBCL2UdzIFfFTOWs8cfX_j5m4R2GDaPnhk2lbozrK-n32d2XJiZ8yOCHTwfBPYeOdqkuVEdXqGJcx__bILCy40zadzo1Fnbwq2cMcopVoHuo2wmR0Wg-3qBKFXmfwL29yKbK_bxz-vbAMDRLbFpCBM22tcDId7So5BFoDIU8twk9GZdWc9-3pxtuE-CiumqSBA93RCz1ZO5J_ZKBTHyFTkBFPF99_J03XJMCTIHTYX-lJifjspZHRts3xBO-2_hg3n9wd_d5mKxS6SMwh5y8Q
+    hc_vault: []
+    age: []
+    lastmodified: "2023-05-16T14:17:50Z"
+    mac: ENC[AES256_GCM,data:2VD9RjvPPOku399+URCGUvd3uDT0dz7frlDyU42rsSTysnCI7IwHXDEYjmJWHIdNJ8TPOwfexAcJoSQg3TOG3iEKtgpGD1NNH5VJwHhRJmUUbPAZLHLssq3fHb0cthGC4EJNSKr9KCCZzQAFJN6m5o6j5NqLxqY5yYdoCDyYj3I=,iv:4N9a3pMgu8Ti/2GaQZ5hN6o64woZzigE8GOWHBUSZSo=,tag:PZXrK4VlD9XulySZpMRxhw==,type:str]
+    pgp: []
+    encrypted_regex: .*(PrivateKey|password|_secret|token)
+    version: 3.7.3

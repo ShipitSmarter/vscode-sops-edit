@@ -218,15 +218,15 @@ export async function isEncryptable(file:Uri) : Promise<boolean> {
 export function isEncrypted(file:Uri) : boolean {
 	// check if file is encrypted by parsing as ini, env or yaml and checking for sops property
 	const contentString: string = readFileSync(file.fsPath, 'utf-8');
-	const extension = _getUriFileExtension(file);
+	const extension = getUriFileExtension(file);
 
 	if (extension === 'ini') {
-		return _isEncryptedIniFile(contentString);
+		return isEncryptedIniFile(contentString);
 	} else if (extension === 'env') {
-		return _isEncryptedEnvFile(contentString);
+		return isEncryptedEnvFile(contentString);
 	}
 		
-	return _isEncryptedYamlFile(contentString);
+	return isEncryptedYamlFile(contentString);
 }
 
 export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
@@ -243,7 +243,7 @@ export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 	return isEncrypted(file);
 }
 
-function _isEncryptedYamlFile(contentString:string) : boolean {
+export function isEncryptedYamlFile(contentString:string) : boolean {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const content = yamlParse(contentString);
@@ -263,11 +263,11 @@ function _isEncryptedYamlFile(contentString:string) : boolean {
 	return false;
 }
 
-function _isEncryptedEnvFile(contentString: string) : boolean {
+export function isEncryptedEnvFile(contentString: string) : boolean {
 	return contentString.match(/(^|\r?\n)sops_version=/) !== null;
 }
 
-function _isEncryptedIniFile(contentString:string) : boolean {
+export function isEncryptedIniFile(contentString:string) : boolean {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
 		const content = iniParse(contentString);
@@ -277,7 +277,7 @@ function _isEncryptedIniFile(contentString:string) : boolean {
 	}
 }
 
-function _getUriFileExtension(file:Uri) : string {
+export function getUriFileExtension(file:Uri) : string {
 	return file.path.split('.').pop() ?? '';
 }
 
