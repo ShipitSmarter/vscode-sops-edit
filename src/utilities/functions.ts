@@ -225,7 +225,7 @@ export async function isEncryptableAndEncrypted(file:Uri) : Promise<boolean> {
 				}
 			}
 		} catch (error) {
-			void window.showInformationMessage(`Could not parse file ${file.path.replace(/^[\s\S]*[/\\]/, '')} as yaml or json`);
+			return false;
 		}
 	}
 
