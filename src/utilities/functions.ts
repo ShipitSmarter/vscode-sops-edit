@@ -218,12 +218,12 @@ export async function isEncryptable(file:Uri) : Promise<boolean> {
 export function isEncrypted(file:Uri) : boolean {
 	// check if file is encrypted by parsing as ini, env or yaml and checking for sops property
 	const contentString: string = readFileSync(file.fsPath, 'utf-8');
-	const extension = _getUriFileExtension(file);
+	const extension = getUriFileExtension(file);
 
 	if (extension === 'ini') {
 		return _isEncryptedIniFile(contentString);
 	} else if (extension === 'env') {
-		return _isEncryptedEnvFile(contentString);
+		return isEncryptedEnvFile(contentString);
 	}
 		
 	return _isEncryptedYamlFile(contentString);
@@ -263,7 +263,7 @@ function _isEncryptedYamlFile(contentString:string) : boolean {
 	return false;
 }
 
-function _isEncryptedEnvFile(contentString: string) : boolean {
+export function isEncryptedEnvFile(contentString: string) : boolean {
 	return contentString.match(/(^|\r?\n)sops_version=/) !== null;
 }
 
@@ -277,7 +277,7 @@ function _isEncryptedIniFile(contentString:string) : boolean {
 	}
 }
 
-function _getUriFileExtension(file:Uri) : string {
+export function getUriFileExtension(file:Uri) : string {
 	return file.path.split('.').pop() ?? '';
 }
 
