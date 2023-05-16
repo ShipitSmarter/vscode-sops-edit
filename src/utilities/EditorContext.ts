@@ -1,5 +1,5 @@
 import { TextEditor, commands } from "vscode";
-import { isOpenedInPlainTextEditor, isSopsEncryptable, isEncryptableAndEncrypted} from "./functions";
+import { isOpenedInPlainTextEditor, isEncryptable, isEncrypted, isTooLargeToConsider} from "./functions";
 
 export class EditorContext {
     public static set(editor:TextEditor|undefined) : void {
@@ -14,16 +14,23 @@ export class EditorContext {
             return;
         }
 
-        const isSopsEncryptableBool = editor ? await isSopsEncryptable(editor.document.uri) : false;
-        if (!isSopsEncryptableBool) {
+        const isTooLargeToConsiderBool = editor ? await isTooLargeToConsider(editor.document.uri) : false;
+        if (isTooLargeToConsiderBool) {
+            void this._setEncryptable(false);
+            void this._setEncrypted(false);
+            return;
+        }
+
+        const isEncryptableBool = editor ? await isEncryptable(editor.document.uri) : false;
+        if (!isEncryptableBool) {
             void this._setEncryptable(false);
             void this._setEncrypted(false);
             return;
         }
         
-        const isEncryptableAndEncryptedBool = editor ? await isEncryptableAndEncrypted(editor.document.uri) : false;
-        if (isSopsEncryptableBool) {
-            if (isEncryptableAndEncryptedBool) {
+        const isEncryptedBool = editor ? isEncrypted(editor.document.uri) : false;
+        if (isEncryptableBool) {
+            if (isEncryptedBool) {
                 void this._setEncryptable(false);
                 void this._setEncrypted(true);
                 return;
