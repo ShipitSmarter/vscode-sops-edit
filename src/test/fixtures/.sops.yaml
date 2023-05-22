@@ -1,0 +1,8 @@
+creation_rules:
+- path_regex: .*\.(yaml|ini|txt)
+  encrypted_regex: .*(PrivateKey|password|_secret|token)
+  key_groups:
+  - azure_keyvault:
+    - vaultUrl: https://bla.vault.azure.net
+      key: abcdefgh
+      version: 5fb04985179143c880fd7e03d7e41e33

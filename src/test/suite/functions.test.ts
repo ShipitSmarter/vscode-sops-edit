@@ -1,5 +1,6 @@
 import { getFixtureUri, loadFixture } from '../testHelpers';
 import * as assert from 'assert';
+// import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import * as functions from '../../utilities/functions';
 suite('functions', () => {
@@ -93,8 +94,36 @@ suite('functions', () => {
     });
 
     suite('other', () => {
+        suite('isEncryptable', () => {
+            test('should detect encryptable', async () => {
+                const encryptable = ['encrypted.ini', 'unencrypted.ini', 'encrypted.yaml', 'unencrypted.yaml', 'unencrypted.txt', 'encrypted.txt'];
+                for (const file of encryptable) {
+                    assert.strictEqual(await functions.isEncryptable(getFixtureUri(file)), true);
+                }
+            });
+            test('should detect unencryptable', async () => {
+                const unencryptable = ['encrypted.env', 'unencrypted.env', 'encrypted.json', 'unencrypted.json'];
+                for (const file of unencryptable) {
+                    assert.strictEqual(await functions.isEncryptable(getFixtureUri(file)), false);
+                }
+            });
+        });
+        suite('isSopsEncrypted', () => {
+            test('should determine sops encrypted', async () => {
+                const sopsEncrypted = ['encrypted.yaml', 'encrypted_multi.yaml', 'encrypted.ini', 'encrypted.txt'];
+                for (const file of sopsEncrypted) {
+                    assert.strictEqual(await functions.isSopsEncrypted(getFixtureUri(file)), true);
+                }
+            });
+            test('should determine not sops encrypted', async () => {
+                const notSopsEncrypted = ['unencrypted.env', 'encrypted.env', 'encrypted.json', 'unencrypted.json', 'unencrypted.txt', 'unencrypted.yaml', 'unencrypted_multi.yaml', 'unencrypted.ini'];
+                for (const file of notSopsEncrypted) {
+                    assert.strictEqual(await functions.isSopsEncrypted(getFixtureUri(file)), false);
+                }
+            });
+        });
         suite('getUriFileExtension', () => {
-            test('should detect file extension', () => {
+            test('should retrieve file extension', () => {
                 const file = vscode.Uri.file('a/b/c.txt');
                 assert.strictEqual(functions.getUriFileExtension(file), "txt");            
             });

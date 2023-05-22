@@ -200,10 +200,14 @@ export async function isTooLargeToConsider(file:Uri) : Promise<boolean> {
 	return fileSize > (1024 * 1024);
 }
 
+export async function getSopsFiles() : Promise<Uri[]> {
+	return await workspace.findFiles(c.sopsYamlGlob);
+}
+
 export async function isEncryptable(file:Uri) : Promise<boolean> {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
-	const sopsFiles =  await workspace.findFiles(c.sopsYamlGlob);
+	const sopsFiles =  await getSopsFiles();
 	for (const sf of sopsFiles) {
 		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
