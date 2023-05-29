@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.0.0
+- Now updates showing of `decrypt`/`encrypt` buttons after manual change to encryptable file
+
 ## 0.0.11
 - Fixed file encryption detection for `.env` and `.ini` files (solves [#15](https://github.com/ShipitSmarter/vscode-sops-edit/issues/15))
 - Fixed editor showing `encrypt` button for decrypted `tmp` files

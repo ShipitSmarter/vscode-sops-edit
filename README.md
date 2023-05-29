@@ -38,9 +38,11 @@ It does so by doing the following:
 ### Event listeners
 This extension adds the following event listeners:
 - Checks for every opened text document if it is a SOPS encrypted file, and if so, applies logic as explained in [But How?](#but-how).
-- Checks for every saved document if it is a decrypted TMP file, and if so, saves and encrypts changes to original SOPS encrypted file.
+- Checks for every saved document:
+  - if it is a decrypted TMP file, and if so, saves and encrypts changes to original SOPS encrypted file
+  - if it is an opened encryptable or encrypted file, and if so, updates showing of `Encrypt`/`Decrypt` buttons
 - Checks for every closed document if it is a decrypted TMP file, and if so, deletes it.
-- Check if the currently active text editor is a SOPS encrypted file, and if so, adds `Decrypt` and `Encrypt` buttons to its top-right editor menu.
+- Check if the currently active text editor is an encrypted or encryptable file, and if so, adds `Decrypt` or `Encrypt` button to its top-right editor menu.
 
 ### Editor menu buttons
 

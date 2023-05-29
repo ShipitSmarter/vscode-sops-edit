@@ -1,5 +1,6 @@
-import { TextDocument, Uri } from "vscode";
+import { TextDocument, Uri, window } from "vscode";
 import { readFileSync, unlinkSync } from "fs";
+import { EditorContext } from "./EditorContext";
 import * as f from "./functions";
 
 type ExtendedTempFile = {
@@ -59,6 +60,7 @@ export class FilePool {
     }
     
     public saveTextDocumentListener(textDocument:TextDocument) : void {
+        EditorContext.set(window.activeTextEditor, this);
         if (f.getSettingOnlyUseButtons()) {
             return;
         }
@@ -72,7 +74,7 @@ export class FilePool {
         if (files.length === 0) {
             f.noFileSelectedErrormessage();
             return;
-        } 
+        }
         
         const directEditFile = files[0];
         this._excludedFilePaths.push(directEditFile.path);
