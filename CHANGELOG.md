@@ -1,5 +1,8 @@
 # Change Log
 
+## Unreleased
+- Fixed [#27](https://github.com/ShipitSmarter/vscode-sops-edit/issues/27): opening a file no longer starts a ripgrep search of the whole workspace for `.sops.yaml` files. The extension now only looks in the directory of the opened file and its parent directories, like `sops` itself does. In large workspaces the old behaviour could start hundreds of concurrent searches and saturate the CPU.
+
 ## 1.0.0
 - Now updates showing of `decrypt`/`encrypt` buttons after manual change to encryptable file
 

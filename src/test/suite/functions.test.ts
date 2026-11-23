@@ -95,17 +95,27 @@ suite('functions', () => {
 
     suite('other', () => {
         suite('isEncryptable', () => {
-            test('should detect encryptable', async () => {
+            test('should detect encryptable', () => {
                 const encryptable = ['encrypted.ini', 'unencrypted.ini', 'encrypted.yaml', 'unencrypted.yaml', 'unencrypted.txt', 'encrypted.txt'];
                 for (const file of encryptable) {
-                    assert.strictEqual(await functions.isEncryptable(getFixtureUri(file)), true);
+                    assert.strictEqual(functions.isEncryptable(getFixtureUri(file)), true);
                 }
             });
-            test('should detect unencryptable', async () => {
+            test('should detect unencryptable', () => {
                 const unencryptable = ['encrypted.env', 'unencrypted.env', 'encrypted.json', 'unencrypted.json'];
                 for (const file of unencryptable) {
-                    assert.strictEqual(await functions.isEncryptable(getFixtureUri(file)), false);
+                    assert.strictEqual(functions.isEncryptable(getFixtureUri(file)), false);
                 }
+            });
+        });
+        suite('getSopsFilesFor', () => {
+            test('should find the .sops.yaml in the directory of the file', () => {
+                const found = functions.getSopsFilesFor(getFixtureUri('encrypted.yaml')).map(u => u.fsPath);
+                assert.ok(found.includes(getFixtureUri('.sops.yaml').fsPath));
+            });
+            test('should not find sops files that are not in the file directory or a parent directory', () => {
+                const found = functions.getSopsFilesFor(getFixtureUri('encrypted.yaml')).map(u => u.fsPath);
+                assert.ok(found.every(f => getFixtureUri('encrypted.yaml').fsPath.startsWith(f.substring(0, f.lastIndexOf('/')))));
             });
         });
         suite('isSopsEncrypted', () => {
