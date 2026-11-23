@@ -1,4 +1,5 @@
-export const sopsYamlGlob = '**/*.sops.yaml';
+// sops config files: `.sops.yaml`, or any file name ending in `.sops.yaml`
+export const sopsYamlSuffix = '.sops.yaml';
 
 // NOTE: direct encryption using 'sops -e a.tmp.yaml > b.yaml' cannot be used here, 
 // as it is NOT a given that the file name of the TMP file will match a SOPS encryption pattern!

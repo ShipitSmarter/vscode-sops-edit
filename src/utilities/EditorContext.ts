@@ -17,7 +17,7 @@ export class EditorContext {
             filePool.containsTempFile(editor.document.uri) ||
             (!await isOpenedInPlainTextEditor(editor.document.uri)) ||
             await isTooLargeToConsider(editor.document.uri) ||
-            (!await isEncryptable(editor.document.uri))
+            (!isEncryptable(editor.document.uri))
         ) {
             this._setButtons(false, false);
             return;

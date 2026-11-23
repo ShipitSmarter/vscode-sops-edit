@@ -1,5 +1,6 @@
 import { Uri, Progress, window, ProgressLocation, workspace, Tab, TabInputText } from "vscode";
-import { readFileSync, copyFileSync, promises as fspromises } from "fs";
+import { readFileSync, readdirSync, copyFileSync, promises as fspromises } from "fs";
+import { dirname, join } from "path";
 import { EditorContext } from './EditorContext';
 import { FilePool } from "./FilePool";
 import { parse as yamlParse, parseAllDocuments as yamlParseAllDocuments } from "yaml";
@@ -200,14 +201,40 @@ export async function isTooLargeToConsider(file:Uri) : Promise<boolean> {
 	return fileSize > (1024 * 1024);
 }
 
-export async function getSopsFiles() : Promise<Uri[]> {
-	return await workspace.findFiles(c.sopsYamlGlob);
+/**
+ * Finds the sops config files (`.sops.yaml`, or `*.sops.yaml`) that can apply to `file`:
+ * the ones in the directory of `file` and in each of its parent directories.
+ *
+ * This deliberately does not use `workspace.findFiles` with a workspace-wide glob. That starts a ripgrep
+ * search of the whole workspace on every call, and this is called for every opened document.
+ * In a large workspace that means many concurrent, minutes-long searches that saturate the CPU.
+ */
+export function getSopsFilesFor(file:Uri) : Uri[] {
+	const sopsFiles: Uri[] = [];
+	let dir = dirname(file.fsPath);
+	for (;;) {
+		try {
+			for (const entry of readdirSync(dir, { withFileTypes: true })) {
+				if ((entry.isFile() || entry.isSymbolicLink()) && entry.name.endsWith(c.sopsYamlSuffix)) {
+					sopsFiles.push(Uri.file(join(dir, entry.name)));
+				}
+			}
+		} catch {
+			// directory not readable: skip it and keep going up
+		}
+		const parent = dirname(dir);
+		if (parent === dir) {
+			break;
+		}
+		dir = parent;
+	}
+	return sopsFiles;
 }
 
-export async function isEncryptable(file:Uri) : Promise<boolean> {
+export function isEncryptable(file:Uri) : boolean {
 	// go through all regexes in all .sops.yaml files, combine them with 
 	// the .sops.yaml file location, and return if given file path matches any
-	const sopsFiles =  await getSopsFiles();
+	const sopsFiles = getSopsFilesFor(file);
 	for (const sf of sopsFiles) {
 		const pr: PatternSet = _getSopsPatternsFromFile(sf);
 		for (const re of pr[1]) {
@@ -236,7 +263,7 @@ export function isEncrypted(file:Uri) : boolean {
 export async function isSopsEncrypted(file:Uri) : Promise<boolean> {
 	// check if file is encryptable (i.e. if it matches any regex in any .sops.yaml file),
 	// and if so, check if it is indeed encrypted
-	if (!await isEncryptable(file)) {
+	if (!isEncryptable(file)) {
 		return false;
 	}
 
